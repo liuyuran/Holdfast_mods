@@ -8,6 +8,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
+using TMPro;
+using HoldfastGame;
 
 namespace TranslateCN
 {
@@ -16,7 +18,9 @@ namespace TranslateCN
         public static bool enabled;
         public static UnityModManager.ModEntry.ModLogger logger;
         public static Hashtable translateBox = new Hashtable();
+        public static Hashtable translateReplace = new Hashtable();
         public static Hashtable missBox = new Hashtable();
+        public static TMP_FontAsset tmpfa;
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
@@ -27,11 +31,19 @@ namespace TranslateCN
             var harmony = HarmonyInstance.Create(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             logger.Log("翻译插件注入完毕");
+            translateReplace.Add("（", "( ");
+            translateReplace.Add("）", " )");
+            translateReplace.Add("，", ", ");
+            translateReplace.Add("。", ". ");
+            translateReplace.Add("「", " \" ");
+            translateReplace.Add("」", " \" ");
+            translateReplace.Add("：", " : ");
             return true;
         }
         
         public static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
         {
+            loadFont();
             enabled = value;
             if (!enabled) {
                 string obj = "{";
@@ -69,7 +81,12 @@ namespace TranslateCN
                     JObject o = (JObject)JToken.ReadFrom(reader);
                     foreach (KeyValuePair<string, JToken> item in o)
                     {
-                        translateBox.Add(item.Key, item.Value.ToString());
+                        string value = item.Value.ToString();
+                        foreach(string key in translateReplace.Keys)
+                        {
+                            value = value.Replace(key, (string)translateReplace[key]);
+                        }
+                        translateBox.Add(item.Key, value);
                         count++;
                     }
                 }
@@ -93,6 +110,31 @@ namespace TranslateCN
                 {
                     __result = (string)translateBox[Term];
                 }
+            }
+        }
+        
+        [HarmonyPatch(typeof(UIChatEntry), "SetEntry")]
+        public static class Font_Patch
+        {
+            static void Postfix(UIChatEntry __instance, string textEntry)
+            {
+                foreach (string key in translateReplace.Keys)
+                {
+                    __instance.messageField.text = 
+                        __instance.messageField.text.Replace(key, (string)translateReplace[key]);
+                }
+            }
+        }
+
+        private static void loadFont() {
+            string path = string.Format("{0}\\Mods\\translateCn\\{1}",
+                Directory.GetCurrentDirectory(), "font.asset");
+            tmpfa = Resources.Load<TMP_FontAsset>(path);
+            logger.Log("加载字体中：" + path);
+            if (tmpfa == null) logger.Log("加载字体失败");
+            else {
+                logger.Log("加载字体完毕，字典如下");
+                logger.Log(TMP_FontAsset.GetCharacters(tmpfa));
             }
         }
     }
