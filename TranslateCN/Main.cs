@@ -20,10 +20,11 @@ namespace TranslateCN
         public static Hashtable translateBox = new Hashtable();
         public static Hashtable translateReplace = new Hashtable();
         public static Hashtable missBox = new Hashtable();
-        public static TMP_FontAsset tmpfa;
+        public static string basePath;
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
+            basePath = modEntry.Path;
             modEntry.OnToggle = OnToggle;
             logger = modEntry.Logger;
             logger.Log("翻译插件开始加载 patch id:" + modEntry.Info.Id);
@@ -38,12 +39,15 @@ namespace TranslateCN
             translateReplace.Add("「", " \" ");
             translateReplace.Add("」", " \" ");
             translateReplace.Add("：", " : ");
+            translateReplace.Add("！", " ! ");
+            translateReplace.Add("《", "< ");
+            translateReplace.Add("》", " >");
+            translateReplace.Add("；", "; ");
             return true;
         }
         
         public static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
         {
-            loadFont();
             enabled = value;
             if (!enabled) {
                 string obj = "{";
@@ -52,8 +56,7 @@ namespace TranslateCN
                     obj += string.Format("\"{0}\":\"{1}\",", key, missBox[key]);
                 }
                 obj += "}";
-                string path = string.Format("{0}\\Mods\\translateCn\\{1}",
-                    Directory.GetCurrentDirectory(), "miss.json");
+                string path = string.Format("{0}{1}", basePath, "miss.json");
                 File.WriteAllText(path, obj);
                 logger.Log("缺失的翻译已保存到" + path);
             }
@@ -67,8 +70,7 @@ namespace TranslateCN
         private static void loadLanguageFile()
         {
             translateBox.Clear();
-            string path = string.Format("{0}\\Mods\\translateCn\\{1}", 
-                Directory.GetCurrentDirectory(), "lang.json");
+            string path = string.Format("{0}{1}", basePath, "lang.json");
             if (!File.Exists(path)) {
                 logger.Log("找不到语言文件，配置加载失败，将使用游戏默认设定。");
                 return;
@@ -98,7 +100,7 @@ namespace TranslateCN
         [HarmonyPatch("GetTranslation")]
         public static class Translation_Patch
         {
-            static void Postfix(string Term, ref string __result)
+            static void Postfix(string Term, string overrideLanguage, ref string __result)
             {
                 if (Term == "NotoSansCJKkr-Medium SDF" || __result == null) return;
                 if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
@@ -106,13 +108,40 @@ namespace TranslateCN
                     logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
                     missBox.Add(Term, __result);
                 }
-                if (translateBox.ContainsKey(Term))
+                if (translateBox.ContainsKey(Term) && 
+                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
                     __result = (string)translateBox[Term];
                 }
             }
         }
-        
+
+        [HarmonyPatch(typeof(ClientAdminBroadcastMessageManager))]
+        [HarmonyPatch("PrivateMessage")]
+        public static class AdminBroadcastA_Patch
+        {
+            static void Prefix(ref string message)
+            {
+                foreach (string key in translateReplace.Keys)
+                {
+                    message = message.Replace(key, (string)translateReplace[key]);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(ClientAdminBroadcastMessageManager))]
+        [HarmonyPatch("AdminMessage")]
+        public static class AdminBroadcastB_Patch
+        {
+            static void Prefix(ref string message)
+            {
+                foreach (string key in translateReplace.Keys)
+                {
+                    message = message.Replace(key, (string)translateReplace[key]);
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(UIChatEntry), "SetEntry")]
         public static class Font_Patch
         {
@@ -123,18 +152,6 @@ namespace TranslateCN
                     __instance.messageField.text = 
                         __instance.messageField.text.Replace(key, (string)translateReplace[key]);
                 }
-            }
-        }
-
-        private static void loadFont() {
-            string path = string.Format("{0}\\Mods\\translateCn\\{1}",
-                Directory.GetCurrentDirectory(), "font.asset");
-            tmpfa = Resources.Load<TMP_FontAsset>(path);
-            logger.Log("加载字体中：" + path);
-            if (tmpfa == null) logger.Log("加载字体失败");
-            else {
-                logger.Log("加载字体完毕，字典如下");
-                logger.Log(TMP_FontAsset.GetCharacters(tmpfa));
             }
         }
     }
