@@ -63,3 +63,53 @@
 根据起点和射线上一点求射线公式
 两点求距离
 根据射线求反向延长线上若干个点
+
+## 笔记
+
+SpreadOnMap
+将所有机器人分布传送到不同的位置，但似乎只有增减机器人的时候才会调用，可能是为了防止魔法现象
+GroupOnMap
+将同阵营机器人传送到相近的位置，但似乎只有增减机器人的时候才会调用，可能是为了防止魔法现象
+AddCarbonPlayers
+增加指定数量的机器人，但似乎是基于协程的异步操作
+RemoveCarbonPlayer
+移除某一个特定的机器人
+RequestingInitialDetailsRPC
+似乎是在某处拼接了一个连接数据包，然后将机器人随机取名并虚拟为一个玩家连入游戏，之后或许可以改一下名字生成规则（在另一个类里）
+SpawnCarbonPlayer
+被上一个函数调用，使机器人出生到地图里
+ClientChosenSpawnSettings
+生成出生选项，比如阵营等，之后需要改成平均分配
+UpdateCarbonPlayerInput
+用来根据设定随机进行动作
+SayPhrase
+喊叫
+SayRandomPhrase
+全体随机喊叫
+TeleportToPlayer
+将机器人全部传送到特定玩家附近
+SwitchCarbonPlayersWeapon
+切换武器 / 随机切换武器
+FixedUpdate
+修复性刷新
+Update
+常规刷新
+InitializeOnMap
+加载地图
+
+Terrain
+这个类属于Unity自带的地形类，包括树、石头之类的地形，但是土地和山丘是否包含尚未可知
+上面的AI控制类中有关于地图的引用，地图类中有关于地形的数组元素，究竟怎么读取还要反复试验
+扫描形成地图之后，就可以使用A*寻路算法了
+但是这类扫描必然很费时间，需要加入缓存
+
+Unity3D的渲染循环
+void FixedUpdate(){}
+这个是对时间高度敏感的，如果需要精确计算时间可以用到
+void Update(){}
+渲染前的参数设定，所有和输入、游戏参数相关的设置都要放在这里
+void LateUpdate(){}
+必定在渲染完成后调用，用来做一些渲染后才能进行的操作比如截图
+
+一个避开障碍物的可能用到U3D自身函数的方式
+https://blog.csdn.net/qq_27880427/article/details/72781269
