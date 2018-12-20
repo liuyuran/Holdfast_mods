@@ -2,6 +2,7 @@
 using HoldfastGame;
 using System.Collections;
 using System.Reflection;
+using UnityEngine;
 using UnityModManagerNet;
 
 namespace CleverRobot
@@ -9,11 +10,13 @@ namespace CleverRobot
     public class Main
     {
         public static UnityModManager.ModEntry.ModLogger logger;
+        private static RobotManager robotManager;
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
             logger = modEntry.Logger;
-            var harmony = HarmonyInstance.Create("chpr");
+            robotManager = new RobotManager();
+            var harmony = HarmonyInstance.Create(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             logger.Log("增强AI加载完成");
             return true;

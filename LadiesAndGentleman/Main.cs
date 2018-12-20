@@ -21,7 +21,7 @@ namespace LadiesAndGentleman
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
             logger = modEntry.Logger;
-            var harmony = HarmonyInstance.Create("chpr");
+            var harmony = HarmonyInstance.Create(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             logger.Log("先生们女士们加载完成");
             return true;
