@@ -43,6 +43,8 @@ namespace TranslateCN
             translateReplace.Add("《", "< ");
             translateReplace.Add("》", " >");
             translateReplace.Add("；", "; ");
+            translateReplace.Add("“", " \" ");
+            translateReplace.Add("”", " \" ");
             return true;
         }
         
@@ -89,6 +91,7 @@ namespace TranslateCN
                             value = value.Replace(key, (string)translateReplace[key]);
                         }
                         translateBox.Add(item.Key, value);
+                        if (missBox.Contains(item.Key)) missBox.Remove(item.Key);
                         count++;
                     }
                 }

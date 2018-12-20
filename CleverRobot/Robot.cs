@@ -22,8 +22,8 @@ namespace CleverRobot
 
     class Matrix : IComparable
     {
-        public int x;
-        public int y;
+        public float x;
+        public float y;
 
         public bool Equals(Matrix mat)
         {
@@ -55,7 +55,7 @@ namespace CleverRobot
             robotList = new List<Robot>();
         }
         /** 增加一个实体对象 */
-        public void addRobot(int x, int y)
+        public void addRobot(float x, float y)
         {
             // TODO 第一个必须是领头的
             Robot robot = new Robot();
@@ -68,8 +68,12 @@ namespace CleverRobot
             robotList.Add(robot);
         }
 
+        public int Count() {
+            return robotList.Count;
+        }
+
         /** 更新位置 */
-        public void updatePosition(int index, int x, int y)
+        public void updatePosition(int index, float x, float y)
         {
             robotList[index].position.x = x;
             robotList[index].position.y = y;
