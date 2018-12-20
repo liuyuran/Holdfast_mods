@@ -7,7 +7,7 @@ using UnityModManagerNet;
 
 namespace LadiesAndGentleman
 {
-    public class Main
+    static public class Main
     {
         public static bool enabled;
         public static UnityModManager.ModEntry.ModLogger logger;

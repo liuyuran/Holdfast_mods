@@ -7,7 +7,7 @@ using UnityModManagerNet;
 
 namespace CleverRobot
 {
-    public class Main
+    static public class Main
     {
         public static UnityModManager.ModEntry.ModLogger logger;
         private static RobotManager robotManager;

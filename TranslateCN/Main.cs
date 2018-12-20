@@ -13,7 +13,7 @@ using HoldfastGame;
 
 namespace TranslateCN
 {
-    static class Main
+    static public class Main
     {
         public static bool enabled;
         public static UnityModManager.ModEntry.ModLogger logger;
@@ -29,9 +29,15 @@ namespace TranslateCN
             logger = modEntry.Logger;
             logger.Log("翻译插件开始加载 patch id:" + modEntry.Info.Id);
             loadLanguageFile();
+            loadReplaceBox();
             var harmony = HarmonyInstance.Create(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             logger.Log("翻译插件注入完毕");
+            return true;
+        }
+
+        public static void loadReplaceBox()
+        {
             translateReplace.Add("（", "( ");
             translateReplace.Add("）", " )");
             translateReplace.Add("，", ", ");
@@ -43,7 +49,6 @@ namespace TranslateCN
             translateReplace.Add("《", "< ");
             translateReplace.Add("》", " >");
             translateReplace.Add("；", "; ");
-            return true;
         }
         
         public static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
