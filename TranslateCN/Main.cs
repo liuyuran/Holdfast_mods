@@ -21,6 +21,7 @@ namespace TranslateCN
         public static Hashtable translateReplace = new Hashtable();
         public static Hashtable missBox = new Hashtable();
         public static string basePath;
+        public static bool english = false;
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
@@ -110,6 +111,7 @@ namespace TranslateCN
         {
             static void Postfix(string Term, string overrideLanguage, ref string __result)
             {
+                if (!enabled) return;
                 if (Term == "NotoSansCJKkr-Medium SDF" || __result == null) return;
                 if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
                 {
@@ -124,12 +126,87 @@ namespace TranslateCN
             }
         }
 
+        [HarmonyPatch(typeof(CharacterClassDetailsRepository))]
+        [HarmonyPatch("ResolveCharacterClassInfo")]
+        public static class Class_Patch
+        {
+            static void Postfix(FactionCountry faction, PlayerClass playerClass, ref CharacterClassInfo __result)
+            {
+                if (!enabled) return;
+                string Term = "Force Class/" + playerClass.ToString();
+                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
+                {
+                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
+                    missBox.Add(Term, __result);
+                }
+                if (translateBox.ContainsKey(Term) &&
+                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
+                {
+                    __result.playerClassName = (string)translateBox[Term];
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(UIRoundPlayersPlayerClassRowPanel))]
+        [HarmonyPatch("Initialize")]
+        public static class Role_Patch
+        {
+            static void Postfix(UIRoundPlayersPlayerClassRowPanel __instance)
+            {
+                if (!enabled) return;
+                string Term = "Force Role/" + __instance.typeTextField.text;
+                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
+                {
+                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __instance.typeTextField.text));
+                    missBox.Add(Term, __instance.typeTextField.text);
+                }
+                if (translateBox.ContainsKey(Term) &&
+                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
+                {
+                    __instance.typeTextField.text = (string)translateBox[Term];
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(UIRoundPlayersSpawnSectionRowPanel))]
+        [HarmonyPatch("SetDetails")]
+        public static class Spawn_Patch
+        {
+            static void Postfix(UIRoundPlayersSpawnSectionRowPanel __instance)
+            {
+                if (!enabled) return;
+                string TermA = "Spawn Name/" + __instance.nameTextField.text;
+                if (!translateBox.ContainsKey(TermA) && !missBox.ContainsKey(TermA))
+                {
+                    logger.Log(string.Format("发现新词条:{0}:{1}", TermA, __instance.nameTextField.text));
+                    missBox.Add(TermA, __instance.nameTextField.text);
+                }
+                if (translateBox.ContainsKey(TermA) &&
+                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
+                {
+                    __instance.nameTextField.text = (string)translateBox[TermA];
+                }
+                string TermB = "Spawn Type/" + __instance.typeTextField.text;
+                if (!translateBox.ContainsKey(TermB) && !missBox.ContainsKey(TermB))
+                {
+                    logger.Log(string.Format("发现新词条:{0}:{1}", TermB, __instance.typeTextField.text));
+                    missBox.Add(TermB, __instance.typeTextField.text);
+                }
+                if (translateBox.ContainsKey(TermB) &&
+                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
+                {
+                    __instance.typeTextField.text = (string)translateBox[TermB];
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(ClientAdminBroadcastMessageManager))]
         [HarmonyPatch("PrivateMessage")]
         public static class AdminBroadcastA_Patch
         {
             static void Prefix(ref string message)
             {
+                if (!enabled) return;
                 foreach (string key in translateReplace.Keys)
                 {
                     message = message.Replace(key, (string)translateReplace[key]);
@@ -143,6 +220,7 @@ namespace TranslateCN
         {
             static void Prefix(ref string message)
             {
+                if (!enabled) return;
                 foreach (string key in translateReplace.Keys)
                 {
                     message = message.Replace(key, (string)translateReplace[key]);
@@ -155,6 +233,7 @@ namespace TranslateCN
         {
             static void Postfix(UIChatEntry __instance, string textEntry)
             {
+                if (!enabled) return;
                 foreach (string key in translateReplace.Keys)
                 {
                     __instance.messageField.text = 

@@ -1,6 +1,8 @@
 ﻿using Harmony12;
 using HoldfastGame;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityModManagerNet;
@@ -22,12 +24,21 @@ namespace CleverRobot
             return true;
         }
 
-        [HarmonyPatch(typeof(ServerCarbonPlayersManager), "Update")]
+        [HarmonyPatch(typeof(ServerCarbonPlayersManager), "RequestingInitialDetailsRPC")]
+        public static class CarbonName_Patch
+        {
+            static bool Prefix(ServerCarbonPlayersManager __instance, uLink.NetworkPlayer networkPlayer)
+            {
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(ServerCarbonPlayersManager), "UpdateCarbonPlayerInput")]
         public static class Manager_Patch
         {
-            static void Postfix(ServerCarbonPlayersManager __instance)
+            static bool Prefix(ServerCarbonPlayersManager __instance)
             {
-                //
+                return false;
             }
         }
 
