@@ -43,18 +43,6 @@ namespace LadiesAndGentleman
             }
         }
 
-        [HarmonyPatch(typeof(ServerAdminBroadcastMessageManager), "PrivateMessage")]
-        public static class Message_Patch
-        {
-            static void Prefix(ref string message)
-            {
-                foreach (string key in translateReplace.Keys)
-                {
-                    message = message.Replace(key, (string)translateReplace[key]);
-                }
-            }
-        }
-
         [HarmonyPatch(typeof(ServerRoundPlayerManager), "AddInstantiatedPlayer")]
         public static class Send_Patch
         {
@@ -74,7 +62,6 @@ namespace LadiesAndGentleman
         {
             static void Postfix(NetworkPlayer networkPlayer)
             {
-                link.Remove((string)linkR[networkPlayer]);
                 linkR.Remove(networkPlayer.id);
             }
         }

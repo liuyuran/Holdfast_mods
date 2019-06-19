@@ -8,8 +8,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.IO;
-using TMPro;
 using HoldfastGame;
+using System;
 
 namespace TranslateCN
 {
@@ -53,11 +53,12 @@ namespace TranslateCN
             translateReplace.Add("“", " \" ");
             translateReplace.Add("”", " \" ");
         }
-        
+
         public static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
         {
             enabled = value;
-            if (!enabled) {
+            if (!enabled)
+            {
                 string obj = "{";
                 foreach (string key in missBox.Keys)
                 {
@@ -79,7 +80,8 @@ namespace TranslateCN
         {
             translateBox.Clear();
             string path = string.Format("{0}{1}", basePath, "lang.json");
-            if (!File.Exists(path)) {
+            if (!File.Exists(path))
+            {
                 logger.Log("找不到语言文件，配置加载失败，将使用游戏默认设定。");
                 return;
             }
@@ -92,7 +94,7 @@ namespace TranslateCN
                     foreach (KeyValuePair<string, JToken> item in o)
                     {
                         string value = item.Value.ToString();
-                        foreach(string key in translateReplace.Keys)
+                        foreach (string key in translateReplace.Keys)
                         {
                             value = value.Replace(key, (string)translateReplace[key]);
                         }
@@ -118,7 +120,7 @@ namespace TranslateCN
                     logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
                     missBox.Add(Term, __result);
                 }
-                if (translateBox.ContainsKey(Term) && 
+                if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
                     __result = (string)translateBox[Term];
@@ -133,7 +135,7 @@ namespace TranslateCN
             static void Postfix(FactionCountry faction, PlayerClass playerClass, ref CharacterClassInfo __result)
             {
                 if (!enabled) return;
-                string Term = "Force Class/" + playerClass.ToString();
+                string Term = "Force Class/" + Enum.GetName(typeof(FactionCountry), faction) + "/" + Enum.GetName(typeof(PlayerClass), playerClass);
                 if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
                 {
                     logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
@@ -147,55 +149,59 @@ namespace TranslateCN
             }
         }
 
-        [HarmonyPatch(typeof(UIRoundPlayersPlayerClassRowPanel))]
-        [HarmonyPatch("Initialize")]
-        public static class Role_Patch
+        [HarmonyPatch(typeof(UIClassSelectionPanel))]
+        [HarmonyPatch("SetSelectedClass")]
+        public static class UIClassSelectionPanelPatch
         {
-            static void Postfix(UIRoundPlayersPlayerClassRowPanel __instance)
+            static void Postfix(UIClassSelectionPanel __instance)
             {
                 if (!enabled) return;
-                string Term = "Force Role/" + __instance.typeTextField.text;
+                string __result = __instance.classRoleLabel.text;
+                string Term = "Force Role/" + __result;
                 if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
                 {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __instance.typeTextField.text));
-                    missBox.Add(Term, __instance.typeTextField.text);
+                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
+                    missBox.Add(Term, __result);
                 }
                 if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
-                    __instance.typeTextField.text = (string)translateBox[Term];
+                    __instance.classRoleLabel.text = (string)translateBox[Term];
                 }
             }
         }
 
         [HarmonyPatch(typeof(UIRoundPlayersSpawnSectionRowPanel))]
         [HarmonyPatch("SetDetails")]
-        public static class Spawn_Patch
+        public static class UIRoundPlayersSpawnSectionRowPanelPatch
         {
             static void Postfix(UIRoundPlayersSpawnSectionRowPanel __instance)
             {
                 if (!enabled) return;
-                string TermA = "Spawn Name/" + __instance.nameTextField.text;
-                if (!translateBox.ContainsKey(TermA) && !missBox.ContainsKey(TermA))
+                string __result = __instance.nameTextField.text;
+                string Term = "Spawn Name/" + __result;
+                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
                 {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", TermA, __instance.nameTextField.text));
-                    missBox.Add(TermA, __instance.nameTextField.text);
+                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
+                    missBox.Add(Term, __result);
                 }
-                if (translateBox.ContainsKey(TermA) &&
+                if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
-                    __instance.nameTextField.text = (string)translateBox[TermA];
+                    __instance.nameTextField.text = (string)translateBox[Term];
                 }
-                string TermB = "Spawn Type/" + __instance.typeTextField.text;
-                if (!translateBox.ContainsKey(TermB) && !missBox.ContainsKey(TermB))
+
+                __result = __instance.typeTextField.text;
+                Term = "Spawn Type/" + __result;
+                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
                 {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", TermB, __instance.typeTextField.text));
-                    missBox.Add(TermB, __instance.typeTextField.text);
+                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
+                    missBox.Add(Term, __result);
                 }
-                if (translateBox.ContainsKey(TermB) &&
+                if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
-                    __instance.typeTextField.text = (string)translateBox[TermB];
+                    __instance.typeTextField.text = (string)translateBox[Term];
                 }
             }
         }
@@ -224,20 +230,6 @@ namespace TranslateCN
                 foreach (string key in translateReplace.Keys)
                 {
                     message = message.Replace(key, (string)translateReplace[key]);
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(UIChatEntry), "SetEntry")]
-        public static class Font_Patch
-        {
-            static void Postfix(UIChatEntry __instance, string textEntry)
-            {
-                if (!enabled) return;
-                foreach (string key in translateReplace.Keys)
-                {
-                    __instance.messageField.text = 
-                        __instance.messageField.text.Replace(key, (string)translateReplace[key]);
                 }
             }
         }
