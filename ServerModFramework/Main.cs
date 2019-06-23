@@ -14,7 +14,7 @@ namespace ServerModFramework
     public delegate void PlayerJoin(ulong steamId);
     public delegate void PlayerLeave(ulong steamId);
     public delegate string AdminMessage(string command);
-    public delegate IConsoleCommand AddCommandList();
+    public delegate string AddCommandList(object[] arguments, int adminID, out bool success);
 
     public class Framework
     {
@@ -22,7 +22,10 @@ namespace ServerModFramework
         public static PlayerJoin playerJoinDelegate = delegate (ulong steamId) { };
         public static PlayerLeave playerLeaveDelegate = delegate (ulong steamId) { };
         public static AdminMessage adminMessageDelegate = delegate (string message) { return ""; };
-        public static AddCommandList addCommandListDelegate = delegate () { return null; };
+        public static AddCommandList adminCommandDelegate = delegate (object[] arguments, int adminID, out bool success) {
+            success = false;
+            return null;
+        };
 
         private static UnityModManager.ModEntry.ModLogger logger;
         private static Hashtable steamIdToLocalId = new Hashtable();
@@ -47,6 +50,46 @@ namespace ServerModFramework
             {
                 countDownDelegate(getRoundTime());
             });
+        }
+
+        public class ModConsoleCommand : IConsoleCommand
+        {
+            public string Name
+            {
+                get
+                {
+                    return "mod";
+                }
+            }
+            public string Description
+            {
+                get
+                {
+                    return "run a mod command";
+                }
+            }
+            public IEnumerable<string> Parameters
+            {
+                get
+                {
+                    return this.Variables.Keys;
+                }
+            }
+
+            public Dictionary<string, SetConsoleCommandVariable> Variables { get; private set; }
+
+            public string Execute(object[] arguments, int adminID, out bool success)
+            {
+                string text = null;
+                success = false;
+                foreach (AddCommandList processor in adminCommandDelegate.GetInvocationList())
+                {
+                    text = processor(arguments, adminID, out success);
+                    if (text != null || success) break;
+                }
+                if (text == null) return "mod not found";
+                return text;
+            }
         }
 
         [HarmonyPatch(typeof(ServerPlayerActionsLogFileHandler), "AddPlayerJoinedEntry")]
@@ -107,19 +150,14 @@ namespace ServerModFramework
         [HarmonyPatch(typeof(GameConsolePanel), "SetCommands")]
         private static class ServerCommands_Patch
         {
-            static void Prefix(ref IEnumerable<IConsoleCommand> commands)
+            static bool Prefix(ref IEnumerable<IConsoleCommand> commands)
             {
-                List<IConsoleCommand> list = new List<IConsoleCommand>(commands);
-                IConsoleCommand command = null;
-                foreach (AddCommandList processor in addCommandListDelegate.GetInvocationList())
+                commands = commands.Add(new ModConsoleCommand());
+                foreach (var item in commands)
                 {
-                    command = processor();
-                    if (command != null)
-                    {
-                        commands.Add(command);
-                    }
+                    logger.Log(item.Name);
                 }
-                commands = list;
+                return true;
             }
         }
 
