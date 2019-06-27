@@ -14,8 +14,8 @@ namespace ServerModFramework
     public delegate void PlayerJoin(ulong steamId);
     public delegate void PlayerLeave(ulong steamId);
     public delegate string AdminMessage(string command);
-    public delegate string PlayerCommand(object[] arguments, ulong steamID, out bool success);
-    public delegate string AdminCommand(object[] arguments, int adminID, out bool success);
+    public delegate string PlayerCommand(string modName, object[] arguments, ulong steamID, out bool success);
+    public delegate string AdminCommand(string modName, object[] arguments, int adminID, out bool success);
 
     public class Framework
     {
@@ -23,11 +23,11 @@ namespace ServerModFramework
         public static PlayerJoin playerJoinDelegate = delegate (ulong steamId) { };
         public static PlayerLeave playerLeaveDelegate = delegate (ulong steamId) { };
         public static AdminMessage adminMessageDelegate = delegate (string message) { return null; };
-        public static AdminCommand adminCommandDelegate = delegate (object[] arguments, int adminID, out bool success) {
+        public static AdminCommand adminCommandDelegate = delegate (string modName, object[] arguments, int adminID, out bool success) {
             success = false;
             return null;
         };
-        public static PlayerCommand playerCommandDelegate = delegate (object[] arguments, ulong steamID, out bool success) {
+        public static PlayerCommand playerCommandDelegate = delegate (string modName, object[] arguments, ulong steamID, out bool success) {
             success = false;
             return null;
         };
@@ -87,10 +87,13 @@ namespace ServerModFramework
             {
                 string text = null;
                 success = false;
-                foreach (AdminCommand processor in adminCommandDelegate.GetInvocationList())
+                if (arguments.Length >= 2)
                 {
-                    text = processor(arguments, adminID, out success);
-                    if (text != null || success) break;
+                    foreach (AdminCommand processor in adminCommandDelegate.GetInvocationList())
+                    {
+                        text = processor((string) arguments[0], arguments.RangeSubset(1, arguments.Length - 1), adminID, out success);
+                        if (text != null || success) break;
+                    }
                 }
                 if (text == null) return "mod command not found";
                 return text;
@@ -179,11 +182,15 @@ namespace ServerModFramework
                 bool success = false;
                 ulong steamId = (ulong)netIdToSteamId[messageInfo.sender.id];
                 string[] arguments = entryText.Split(' ');
-                foreach (PlayerCommand processor in playerCommandDelegate.GetInvocationList())
+                if (arguments.Length >= 2)
                 {
-                    text = processor(arguments, steamId, out success);
-                    if (text != null || success) {
-                        break;
+                    foreach (PlayerCommand processor in playerCommandDelegate.GetInvocationList())
+                    {
+                        text = processor((string)arguments[1], arguments.RangeSubset(2, arguments.Length - 2), steamId, out success);
+                        if (text != null || success)
+                        {
+                            break;
+                        }
                     }
                 }
                 if (text == null) return true;
