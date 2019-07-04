@@ -5,6 +5,8 @@ using uLink;
 
 namespace ServerModFramework
 {
+    public delegate void PlayerJoin(ulong steamId);
+    public delegate void PlayerLeave(ulong steamId);
     public static partial class Framework
     {
         public static PlayerJoin playerJoinDelegate = delegate (ulong steamId) { };

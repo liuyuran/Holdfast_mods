@@ -6,6 +6,9 @@ using uLink;
 
 namespace ServerModFramework
 {
+    public delegate string AdminMessage(string command);
+    public delegate string PlayerCommand(string modName, object[] arguments, ulong steamID, out bool success);
+    public delegate string AdminCommand(string modName, object[] arguments, int adminID, out bool success);
     public static partial class Framework
     {
         public static AdminMessage adminMessageDelegate = delegate (string message) { return null; };

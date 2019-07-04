@@ -54,8 +54,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Broadcast.cs" />
-    <Compile Include="Command.cs" />
+    <Compile Include="BroadcastManage.cs" />
+    <Compile Include="CarbonManage.cs" />
+    <Compile Include="CommandManage.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoundManage.cs" />

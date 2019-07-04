@@ -6,6 +6,7 @@ using System.Collections;
 using System.IO;
 using System.Text.RegularExpressions;
 using System;
+using HoldfastGame;
 
 namespace CompereRobot
 {
@@ -29,8 +30,18 @@ namespace CompereRobot
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             Framework.countDownDelegate += timelineLoop;
             Framework.adminCommandDelegate += serverCommand;
+            Framework.playerJoinDelegate += loadPluginBroadcast;
+            Framework.roundEndDelegate += clearScenario;
             logger.Log("虚拟主持人加载完成");
             return true;
+        }
+
+        private static void clearScenario(GameDetails details) {
+            script.Clear();
+        }
+
+        private static void loadPluginBroadcast(ulong steamId) {
+            Framework.sendMessage(steamId, "virtual compere plugin actived.");
         }
 
         private static string serverCommand(string modName, object[] arguments, int adminID, out bool success)
