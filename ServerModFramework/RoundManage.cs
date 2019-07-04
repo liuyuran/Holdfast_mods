@@ -1,4 +1,13 @@
-﻿using Harmony12;
+﻿/**
+ * @file RoundManage.cs
+ * @brief 战场模块文件
+ * @details 这个文件包含了计时器和切换地图相关逻辑
+ * @author 夏洛特
+ * @version 0.1b
+ * @date 2019-07-04
+ */
+
+using Harmony12;
 using HoldfastGame;
 using System.Timers;
 
@@ -9,9 +18,9 @@ namespace ServerModFramework
     public delegate void RoundEnd(GameDetails detail);
     public static partial class Framework
     {
-        public static CountDown countDownDelegate = delegate (int roundTime) { };
-        public static RoundStart roundStartDelegate = delegate (GameDetails detail) { };
-        public static RoundEnd roundEndDelegate = delegate (GameDetails detail) { };
+        public static CountDown countDownDelegate = null;
+        public static RoundStart roundStartDelegate = null;
+        public static RoundEnd roundEndDelegate = null;
 
         private static void startTimer()
         {
@@ -21,7 +30,7 @@ namespace ServerModFramework
             timer.Start();
             timer.Elapsed += new System.Timers.ElapsedEventHandler(delegate (object source, ElapsedEventArgs e)
             {
-                countDownDelegate(getRoundTime());
+                countDownDelegate?.Invoke(getRoundTime());
             });
         }
 
@@ -30,13 +39,13 @@ namespace ServerModFramework
         {
             static bool Prefix(GameDetails gameDetails)
             {
-                roundStartDelegate(gameDetails);
+                roundStartDelegate?.Invoke(gameDetails);
                 return true;
             }
 
             static void Postfix(GameDetails gameDetails)
             {
-                roundEndDelegate(gameDetails);
+                roundEndDelegate?.Invoke(gameDetails);
             }
         }
 

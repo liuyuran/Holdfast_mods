@@ -257,5 +257,7 @@ paket-files/
 .cr/
 
 # Python Tools for Visual Studio (PTVS)
+!.gitignore
 __pycache__/
 *.pyc
+ServerModFramework/Docs/

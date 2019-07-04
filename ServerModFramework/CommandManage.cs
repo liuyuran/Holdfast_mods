@@ -1,4 +1,13 @@
-﻿using Harmony12;
+﻿/**
+ * @file CommandManage.cs
+ * @brief 命令系统模块文件
+ * @details 这个文件包含了玩家命令和管理员命令相关逻辑
+ * @author 夏洛特
+ * @version 0.1b
+ * @date 2019-07-04
+ */
+
+using Harmony12;
 using HoldfastGame;
 using System;
 using System.Collections.Generic;
@@ -11,15 +20,9 @@ namespace ServerModFramework
     public delegate string AdminCommand(string modName, object[] arguments, int adminID, out bool success);
     public static partial class Framework
     {
-        public static AdminMessage adminMessageDelegate = delegate (string message) { return null; };
-        public static AdminCommand adminCommandDelegate = delegate (string modName, object[] arguments, int adminID, out bool success) {
-            success = false;
-            return null;
-        };
-        public static PlayerCommand playerCommandDelegate = delegate (string modName, object[] arguments, ulong steamID, out bool success) {
-            success = false;
-            return null;
-        };
+        public static AdminMessage adminMessageDelegate = null;
+        public static AdminCommand adminCommandDelegate = null;
+        public static PlayerCommand playerCommandDelegate = null;
 
         public class ModConsoleCommand : IConsoleCommand
         {

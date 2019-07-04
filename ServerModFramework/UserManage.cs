@@ -1,4 +1,13 @@
-﻿using Harmony12;
+﻿/**
+ * @file UserManage.cs
+ * @brief 玩家模块文件
+ * @details 这个文件包含了玩家进场出场以及ID映射的相关逻辑
+ * @author 夏洛特
+ * @version 0.1b
+ * @date 2019-07-04
+ */
+
+ using Harmony12;
 using HoldfastGame;
 using System.Collections;
 using uLink;
@@ -9,8 +18,8 @@ namespace ServerModFramework
     public delegate void PlayerLeave(ulong steamId);
     public static partial class Framework
     {
-        public static PlayerJoin playerJoinDelegate = delegate (ulong steamId) { };
-        public static PlayerLeave playerLeaveDelegate = delegate (ulong steamId) { };
+        public static PlayerJoin playerJoinDelegate = null;
+        public static PlayerLeave playerLeaveDelegate = null;
 
         private static Hashtable steamIdToLocalId = new Hashtable();
         private static Hashtable netIdToSteamId = new Hashtable();
@@ -33,7 +42,7 @@ namespace ServerModFramework
             static void Postfix(RoundPlayerInformation roundPlayerInformation)
             {
                 netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
-                playerJoinDelegate(roundPlayerInformation.SteamID);
+                playerJoinDelegate?.Invoke(roundPlayerInformation.SteamID);
             }
         }
 
@@ -42,7 +51,7 @@ namespace ServerModFramework
         {
             static void Postfix(NetworkPlayer networkPlayer)
             {
-                playerLeaveDelegate((ulong)netIdToSteamId[networkPlayer.id]);
+                playerLeaveDelegate?.Invoke((ulong)netIdToSteamId[networkPlayer.id]);
                 netIdToSteamId.Remove(networkPlayer.id);
             }
         }
