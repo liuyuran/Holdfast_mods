@@ -20,9 +20,12 @@ namespace ServerModFramework
     public delegate string AdminCommand(string modName, object[] arguments, int adminID, out bool success);
     public static partial class Framework
     {
-        public static AdminMessage adminMessageDelegate = null;
-        public static AdminCommand adminCommandDelegate = null;
-        public static PlayerCommand playerCommandDelegate = null;
+        /// 管理员频道监听器
+        public static event AdminMessage adminMessageDelegate;
+        /// 管理员命令监听器
+        public static event AdminCommand adminCommandDelegate;
+        /// 用户命令监听器
+        public static event PlayerCommand playerCommandDelegate;
 
         public class ModConsoleCommand : IConsoleCommand
         {

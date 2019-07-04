@@ -18,9 +18,12 @@ namespace ServerModFramework
     public delegate void RoundEnd(GameDetails detail);
     public static partial class Framework
     {
-        public static CountDown countDownDelegate = null;
-        public static RoundStart roundStartDelegate = null;
-        public static RoundEnd roundEndDelegate = null;
+        /// 时间监听器
+        public static event CountDown countDownDelegate;
+        /// 地图切换完成监听器
+        public static event RoundStart roundStartDelegate;
+        /// 地图开始切换监听器
+        public static event RoundEnd roundEndDelegate;
 
         private static void startTimer()
         {
@@ -28,9 +31,9 @@ namespace ServerModFramework
             timer.Enabled = true;
             timer.Interval = 1000;
             timer.Start();
-            timer.Elapsed += new System.Timers.ElapsedEventHandler(delegate (object source, ElapsedEventArgs e)
+            timer.Elapsed += new ElapsedEventHandler(delegate (object source, ElapsedEventArgs e)
             {
-                countDownDelegate?.Invoke(getRoundTime());
+                countDownDelegate(getRoundTime());
             });
         }
 
@@ -39,13 +42,13 @@ namespace ServerModFramework
         {
             static bool Prefix(GameDetails gameDetails)
             {
-                roundStartDelegate?.Invoke(gameDetails);
+                roundStartDelegate(gameDetails);
                 return true;
             }
 
             static void Postfix(GameDetails gameDetails)
             {
-                roundEndDelegate?.Invoke(gameDetails);
+                roundEndDelegate(gameDetails);
             }
         }
 

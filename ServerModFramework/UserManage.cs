@@ -18,8 +18,10 @@ namespace ServerModFramework
     public delegate void PlayerLeave(ulong steamId);
     public static partial class Framework
     {
-        public static PlayerJoin playerJoinDelegate = null;
-        public static PlayerLeave playerLeaveDelegate = null;
+        /// 玩家进入监听器
+        public static event PlayerJoin playerJoinDelegate;
+        /// 玩家离开监听器
+        public static event PlayerLeave playerLeaveDelegate;
 
         private static Hashtable steamIdToLocalId = new Hashtable();
         private static Hashtable netIdToSteamId = new Hashtable();
@@ -42,7 +44,7 @@ namespace ServerModFramework
             static void Postfix(RoundPlayerInformation roundPlayerInformation)
             {
                 netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
-                playerJoinDelegate?.Invoke(roundPlayerInformation.SteamID);
+                playerJoinDelegate(roundPlayerInformation.SteamID);
             }
         }
 
@@ -51,7 +53,7 @@ namespace ServerModFramework
         {
             static void Postfix(NetworkPlayer networkPlayer)
             {
-                playerLeaveDelegate?.Invoke((ulong)netIdToSteamId[networkPlayer.id]);
+                playerLeaveDelegate((ulong)netIdToSteamId[networkPlayer.id]);
                 netIdToSteamId.Remove(networkPlayer.id);
             }
         }
