@@ -41,7 +41,7 @@ namespace CompereRobot
         }
 
         private static void loadPluginBroadcast(ulong steamId) {
-            Framework.sendMessage(steamId, "virtual compere plugin actived.");
+            Framework.sendMessage(steamId, ServerConfigurationFileManager.CurrentConfigurationFile.WelcomeMessage);
         }
 
         private static string serverCommand(string modName, object[] arguments, int adminID, out bool success)
