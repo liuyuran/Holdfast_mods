@@ -9,10 +9,13 @@ namespace RconRepeater
 {
     public static class Main
     {
+        private static UnityModManager.ModEntry.ModLogger logger;
         private static int port = 27015;
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
+            logger = modEntry.Logger;
             startRconServer();
+            logger.Log("RCON扩展服务加载完成");
             return true;
         }
 
