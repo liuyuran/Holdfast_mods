@@ -1,7 +1,9 @@
-﻿using HoldfastGame;
+﻿using Harmony12;
+using HoldfastGame;
 using RCONServerLib;
 using System;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using UnityModManagerNet;
 
@@ -11,16 +13,26 @@ namespace RconRepeater
     {
         private static UnityModManager.ModEntry.ModLogger logger;
         private static int port = 27015;
+        private static RemoteConServer server = null;
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
             logger = modEntry.Logger;
-            startRconServer();
+            var harmony = HarmonyInstance.Create(modEntry.Info.Id);
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
             logger.Log("RCON扩展服务加载完成");
             return true;
         }
 
+        [HarmonyPatch(typeof(ServerConfigurationFileManager), "ReadConfigurationFile")]
+        private static class ServerConfigurationFileManager_Patch {
+            static void Postfix()
+            {
+                if (server != null) server.Password = ServerConfigurationFileManager.CurrentConfigurationFile.ServerAdminPassword;
+                else startRconServer();
+            }
+        }
         private static void startRconServer() {
-            var server = new RemoteConServer(IPAddress.Any, port)
+            server = new RemoteConServer(IPAddress.Any, port)
             {
                 SendAuthImmediately = true,
                 Debug = true,
