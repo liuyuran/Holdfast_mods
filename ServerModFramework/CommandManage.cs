@@ -101,10 +101,6 @@ namespace ServerModFramework
             static bool Prefix(ref IEnumerable<IConsoleCommand> commands)
             {
                 commands = commands.Add(new ModConsoleCommand());
-                foreach (var item in commands)
-                {
-                    logger.Log(item.Name);
-                }
                 return true;
             }
         }
