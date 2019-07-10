@@ -43,7 +43,8 @@ namespace ServerModFramework
         {
             static void Postfix(RoundPlayerInformation roundPlayerInformation)
             {
-                netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
+                if(netIdToSteamId.ContainsKey(roundPlayerInformation.NetworkPlayer.id))
+                    netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
                 playerJoinDelegate(roundPlayerInformation.SteamID);
             }
         }
@@ -51,10 +52,11 @@ namespace ServerModFramework
         [HarmonyPatch(typeof(ServerRoundPlayerManager), "RemovePlayer")]
         private static class PlayerRemove_Patch
         {
-            static void Postfix(NetworkPlayer networkPlayer)
+            static bool Prefix(NetworkPlayer networkPlayer)
             {
                 playerLeaveDelegate((ulong)netIdToSteamId[networkPlayer.id]);
                 netIdToSteamId.Remove(networkPlayer.id);
+                return true;
             }
         }
     }

@@ -41,15 +41,16 @@ namespace ServerModFramework
         [HarmonyPatch(typeof(ServerGameManager), "ChangeGameMode", new Type[] { typeof(GameDetails)})]
         private static class ChangeGameMode_Patch
         {
-            static bool Prefix(ref GameDetails gameDetails)
+            static bool Prefix(GameDetails gameDetails)
             {
-                //roundStartDelegate(gameDetails);
+                if (gameDetails != null && roundStartDelegate != null) roundStartDelegate(gameDetails);
                 return true;
             }
 
-            static void Postfix(ref GameDetails gameDetails)
+            static void Postfix(GameDetails gameDetails)
             {
-                //roundEndDelegate(gameDetails);
+                if (gameDetails != null && roundEndDelegate != null) roundEndDelegate(gameDetails);
+                    logger.Log("detail test:" + gameDetails.MaxPlayerRespawns);
             }
         }
 
