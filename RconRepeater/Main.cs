@@ -7,7 +7,7 @@ using UnityModManagerNet;
 
 namespace RconRepeater
 {
-    public static class MainA
+    public static class Main
     {
         private static int port = 27015;
         public static bool Load(UnityModManager.ModEntry modEntry)
