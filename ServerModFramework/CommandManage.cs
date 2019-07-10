@@ -125,7 +125,7 @@ namespace ServerModFramework
                 {
                     foreach (PlayerCommand processor in playerCommandDelegate.GetInvocationList())
                     {
-                        text = processor((string)arguments[1], arguments.RangeSubset(2, arguments.Length - 2), steamId, out success);
+                        text = processor(arguments[1], arguments.RangeSubset(2, arguments.Length - 2), steamId, out success);
                         if (text != null || success)
                         {
                             break;
