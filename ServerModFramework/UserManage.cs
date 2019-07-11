@@ -54,8 +54,10 @@ namespace ServerModFramework
         {
             static bool Prefix(NetworkPlayer networkPlayer)
             {
-                playerLeaveDelegate((ulong)netIdToSteamId[networkPlayer.id]);
+                if (networkPlayer == null) return true;
                 netIdToSteamId.Remove(networkPlayer.id);
+                if (netIdToSteamId[networkPlayer.id] == null || playerLeaveDelegate == null) return true;
+                playerLeaveDelegate((ulong)netIdToSteamId[networkPlayer.id]);
                 return true;
             }
         }
