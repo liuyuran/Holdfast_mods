@@ -38,6 +38,10 @@ namespace RconRepeater
                 Debug = true,
                 UseCustomCommandHandler = true,
                 EnableIpWhitelist = false,
+                MaxConnections = uint.MaxValue,
+                MaxConnectionsPerIp = uint.MaxValue,
+                MaxPasswordTries = 3,
+                BanMinutes = 60 * 24,
                 Password = ServerConfigurationFileManager.CurrentConfigurationFile.ServerAdminPassword
             };
             server.OnCommandReceived += Server_OnCommandReceived;
