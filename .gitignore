@@ -261,3 +261,4 @@ paket-files/
 __pycache__/
 *.pyc
 ServerModFramework/Docs/
+RconClient/Properties/launchSettings.json
