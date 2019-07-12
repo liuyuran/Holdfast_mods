@@ -20,14 +20,61 @@ namespace ServerModFramework
         private static List<int> carbonList = new List<int>();
         private static Dictionary<int, CarbonPlayer> carbonLink = new Dictionary<int, CarbonPlayer>();
         private static ServerComponentReferenceManager instant => ServerComponentReferenceManager.ServerInstance;
-
         public class CarbonPlayer
         {
             private NetworkPlayer networkPlayer;
             public NetworkPlayer getNetworkPlayer => networkPlayer;
+            public CarbonPlayerRepresentation representation { get; private set; }
             public CarbonPlayer(NetworkPlayer networkPlayer)
             {
                 this.networkPlayer = networkPlayer;
+            }
+            private CharacterVoiceIdentifier getDefaultVoice(FactionCountry factionCountry)
+            {
+                switch(factionCountry)
+                {
+                    case FactionCountry.British:
+                        return CharacterVoiceIdentifier.Joseph_British_1;
+                    case FactionCountry.French:
+                        return CharacterVoiceIdentifier.Herve_French_1;
+                    case FactionCountry.Prussian:
+                        return CharacterVoiceIdentifier.Fabrec_Prussian_1;
+                    default:
+                        return CharacterVoiceIdentifier.Joseph_British_1;
+                }
+            }
+            public void bindRepresentation(CarbonPlayerRepresentation representation)
+            {
+                this.representation = representation;
+            }
+            public void spawn(FactionCountry factionCountry, PlayerClass playerClass, SpawnSection spawnSection)
+            {
+                if (representation == null) return;
+                int currentRoundIdentifier = instant.serverGameManager.CurrentRoundIdentifier;
+                SpawnSectionCriteria spawnSectionCriteria = ComponentReferenceManager.genericObjectPools.spawnSectionCriteria.Obtain();
+                spawnSectionCriteria.Faction = factionCountry;
+                dfList<SpawnSection> dfList = instant.serverSpawnSectionManager.QuerySpawnSections(spawnSectionCriteria, false);
+                ComponentReferenceManager.genericObjectPools.spawnSectionCriteria.Release(spawnSectionCriteria);
+                if (dfList.Count == 0)
+                {
+                    dfList.Release();
+                    return;
+                }
+                dfList.Release();
+                int sectionIdentifier = spawnSection.sectionIdentifier;
+                int characterHeadIdentifier = 1;
+                CharacterVoiceIdentifier characterVoiceIdentifier = getDefaultVoice(factionCountry);
+                ClientChosenSpawnSettings spawnSettings = new ClientChosenSpawnSettings
+                {
+                    RoundIdentifier = currentRoundIdentifier,
+                    CharacterVoiceIdentifier = characterVoiceIdentifier,
+                    CharacterHeadIdentifier = characterHeadIdentifier,
+                    Faction = factionCountry,
+                    ClassType = playerClass,
+                    SpawnSectionID = sectionIdentifier
+                };
+                representation.timeLastAttemptedToSpawn = Time.time;
+                instant.serverGameManager.QueueClientChosenSpawnSettings(networkPlayer, spawnSettings, false);
             }
             public void carbonCommandSwitchWeapon(WeaponType weaponType)
             {
@@ -41,6 +88,64 @@ namespace ServerModFramework
                     }
                 }
             }
+            public void teleport(Vector3 vector) {
+                ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(networkPlayer.id);
+                if (serverRoundPlayer != null)
+                {
+                    vector = vector.ReplaceY(200f);
+                    Ray ray = new Ray(vector, Vector3.down);
+                    RaycastHit raycastHit2;
+                    bool flag2 = Physics.Raycast(ray, out raycastHit2, 500f, instant.commonGlobalVariables.layers.walkable);
+                    if (flag2)
+                    {
+                        vector = vector.ReplaceY(raycastHit2.point.y);
+                        serverRoundPlayer.PlayerBase.Teleport(vector);
+                    }
+                }
+            }
+            public void activeAction(PlayerActions playerAction, Vector3 look, MeleeStrikeType meleeStrike = MeleeStrikeType.None)
+            {
+                ServerRoundPlayer player = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(networkPlayer.id);
+                if (player == null) return;
+                AutonomousPlayerInputHandler input = representation.input;
+                OwnerPacketToServer ownerPacketToServer = ComponentReferenceManager.genericObjectPools.ownerPacketToServer.Obtain();
+                byte spawnInstance = player.PlayerBase.PlayerStartData.SpawnInstance;
+                Vector2 axis = input.Axis;
+                axis.x = look.x;
+                axis.y = look.z;
+                ownerPacketToServer.Instance = new byte?(spawnInstance);
+                ownerPacketToServer.OwnerInputAxis = new Vector2?(axis);
+                ownerPacketToServer.OwnerRotationY = new float?(look.y);
+                ownerPacketToServer.Swimming = false;
+                if (playerAction != PlayerActions.None)
+                {
+                    EnumCollection<PlayerActions> enumCollection = ComponentReferenceManager.genericObjectPools.playerActionsEnumCollection.Obtain();
+                    enumCollection.Add((int)playerAction);
+                    if (playerAction == PlayerActions.FireFirearm)
+                    {
+                        double networkTime = uLinkNetworkConnectionsCollection.networkTime;
+                        ownerPacketToServer.CameraForward = new Vector3?(player.PlayerTransform.forward);
+                        ownerPacketToServer.CameraPosition = new Vector3?(player.PlayerTransform.position);
+                        ownerPacketToServer.PacketTimestamp = new double?(networkTime);
+                    }
+                    ownerPacketToServer.ActionCollection = enumCollection;
+                }
+                player.uLinkStrictPlatformerCreator.HandleOwnerPacketToServer(ownerPacketToServer);
+                if (meleeStrike != MeleeStrikeType.None)
+                {
+                    PlayerMeleeStrikePacket playerMeleeStrikePacket = ComponentReferenceManager.genericObjectPools.playerMeleeStrikePacket.Obtain();
+                    playerMeleeStrikePacket.AttackTime = uLinkNetworkConnectionsCollection.networkTime;
+                    playerMeleeStrikePacket.AttackingPlayerID = representation.playerID;
+                    playerMeleeStrikePacket.AttackingPlayerMeleeWeaponDamageDealerTypeID = player.WeaponHolder.ActiveWeaponDetails.damageDealerTypeID;
+                    playerMeleeStrikePacket.MeleeStrikeType = meleeStrike;
+                    instant.meleeStrikeManager.MeleeAttackStrike(playerMeleeStrikePacket);
+                }
+            }
+        }
+
+        private static string generateRandomName()
+        {
+            return "";
         }
 
         public static int addCarbonPlayer()
@@ -77,7 +182,7 @@ namespace ServerModFramework
                 int characterFaceIdentifier = 0;
                 PlayerInitialDetails playerInitialDetails = new PlayerInitialDetails
                 {
-                    Name = HomelessMethods.GenerateRandomWord(10),
+                    Name = generateRandomName(),
                     CharacterVoicePitch = 1f,
                     CharacterFaceIdentifier = characterFaceIdentifier
                 };
@@ -89,6 +194,7 @@ namespace ServerModFramework
                     input = input,
                     networkPlayer = networkPlayer
                 };
+                if(carbonLink.ContainsKey(networkPlayer.id)) carbonLink[networkPlayer.id].bindRepresentation(value);
                 return false;
             }
         }
