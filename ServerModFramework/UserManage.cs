@@ -10,6 +10,7 @@
  using Harmony12;
 using HoldfastGame;
 using System.Collections;
+using System.Collections.Generic;
 using uLink;
 
 namespace ServerModFramework
@@ -23,8 +24,8 @@ namespace ServerModFramework
         /// 玩家离开监听器
         public static event PlayerLeave playerLeaveDelegate;
 
-        private static Hashtable steamIdToLocalId = new Hashtable();
-        private static Hashtable netIdToSteamId = new Hashtable();
+        private static Dictionary<ulong, int> steamIdToLocalId = new Dictionary<ulong, int>();
+        private static Dictionary<int, ulong> netIdToSteamId = new Dictionary<int, ulong>();
 
         [HarmonyPatch(typeof(ServerPlayerActionsLogFileHandler), "AddPlayerJoinedEntry")]
         private static class PlayerJoin_Patch
@@ -43,7 +44,8 @@ namespace ServerModFramework
         {
             static void Postfix(RoundPlayerInformation roundPlayerInformation)
             {
-                netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
+                if(netIdToSteamId.ContainsKey(roundPlayerInformation.NetworkPlayer.id))
+                    netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
                 playerJoinDelegate(roundPlayerInformation.SteamID);
             }
         }
@@ -51,10 +53,13 @@ namespace ServerModFramework
         [HarmonyPatch(typeof(ServerRoundPlayerManager), "RemovePlayer")]
         private static class PlayerRemove_Patch
         {
-            static void Postfix(NetworkPlayer networkPlayer)
+            static bool Prefix(NetworkPlayer networkPlayer)
             {
-                playerLeaveDelegate((ulong)netIdToSteamId[networkPlayer.id]);
+                if (networkPlayer == null) return true;
                 netIdToSteamId.Remove(networkPlayer.id);
+                if (netIdToSteamId[networkPlayer.id] == 0 || playerLeaveDelegate == null) return true;
+                playerLeaveDelegate(netIdToSteamId[networkPlayer.id]);
+                return true;
             }
         }
     }

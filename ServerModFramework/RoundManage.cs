@@ -9,6 +9,7 @@
 
 using Harmony12;
 using HoldfastGame;
+using System;
 using System.Timers;
 
 namespace ServerModFramework
@@ -37,18 +38,19 @@ namespace ServerModFramework
             });
         }
 
-        [HarmonyPatch(typeof(ServerGameManager), "ChangeGameMode")]
+        [HarmonyPatch(typeof(ServerGameManager), "ChangeGameMode", new Type[] { typeof(GameDetails)})]
         private static class ChangeGameMode_Patch
         {
             static bool Prefix(GameDetails gameDetails)
             {
-                roundStartDelegate(gameDetails);
+                if (gameDetails != null && roundStartDelegate != null) roundStartDelegate(gameDetails);
                 return true;
             }
 
             static void Postfix(GameDetails gameDetails)
             {
-                roundEndDelegate(gameDetails);
+                if (gameDetails != null && roundEndDelegate != null) roundEndDelegate(gameDetails);
+                    logger.Log("detail test:" + gameDetails.MaxPlayerRespawns);
             }
         }
 
