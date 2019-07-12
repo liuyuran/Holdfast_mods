@@ -61,7 +61,7 @@ namespace RconClient
                 }
 
                 client.SendCommand(StringToUnicode(cmd), result => { Console.WriteLine(">>" + UnicodeToString(result)
-                    .Replace("<br/>", "\n")); });
+                    .Replace("<br/>", "")); });
             }
         }
 
