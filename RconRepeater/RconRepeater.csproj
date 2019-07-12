@@ -38,11 +38,7 @@
       <HintPath>..\..\UMM - client\0Harmony12.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
-<<<<<<< HEAD
-      <HintPath>..\..\Managed\Assembly-CSharp.dll</HintPath>
-=======
       <HintPath>..\..\Steam\steamapps\common\Holdfast Nations At War\Holdfast NaW_Data\Managed\Assembly-CSharp.dll</HintPath>
->>>>>>> develop
     </Reference>
     <Reference Include="RCONServerLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\source-rcon-server.1.3.0\lib\net35\RCONServerLib.dll</HintPath>
