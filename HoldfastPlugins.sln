@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RconRepeater", "RconRepeate
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RconClient", "RconClient\RconClient.csproj", "{168A2707-4F3B-45B5-A1FD-1FB85581208C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PubLineBot", "PubLineBot\PubLineBot.csproj", "{E1089924-C71C-45E8-9D7D-F3D13CC1B2A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{168A2707-4F3B-45B5-A1FD-1FB85581208C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{168A2707-4F3B-45B5-A1FD-1FB85581208C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{168A2707-4F3B-45B5-A1FD-1FB85581208C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1089924-C71C-45E8-9D7D-F3D13CC1B2A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1089924-C71C-45E8-9D7D-F3D13CC1B2A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1089924-C71C-45E8-9D7D-F3D13CC1B2A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1089924-C71C-45E8-9D7D-F3D13CC1B2A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

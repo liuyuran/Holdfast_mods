@@ -19,6 +19,7 @@ namespace ServerModFramework
     {
         private static List<int> carbonList = new List<int>();
         private static Dictionary<int, CarbonPlayer> carbonLink = new Dictionary<int, CarbonPlayer>();
+        private static Dictionary<int, string> carbonNameLink = new Dictionary<int, string>();
         private static ServerComponentReferenceManager instant => ServerComponentReferenceManager.ServerInstance;
         public class CarbonPlayer
         {
@@ -143,12 +144,7 @@ namespace ServerModFramework
             }
         }
 
-        private static string generateRandomName()
-        {
-            return "";
-        }
-
-        public static int addCarbonPlayer()
+        public static int addCarbonPlayer(string name)
         {
             NetworkPlayer networkPlayer = Network.NetworkClientAllocator.Allocate();
             networkPlayer.isCarbonPlayer = true;
@@ -163,6 +159,7 @@ namespace ServerModFramework
             instant.serverGameManager.HandleSteamAuthSettings(auth, networkPlayer);
             carbonList.Add(networkPlayer.id);
             carbonLink.Add(networkPlayer.id, new CarbonPlayer(networkPlayer));
+            carbonNameLink.Add(networkPlayer.id, name);
             return networkPlayer.id;
         }
 
@@ -177,15 +174,16 @@ namespace ServerModFramework
         [HarmonyPatch(typeof(ServerCarbonPlayersManager), "RequestingInitialDetailsRPC")]
         private static class CarbonManager_RequestingInitialDetailsRPC_Patch
         {
-            static bool Prefix(NetworkPlayer networkPlayer, GameServerInitialDetails packet)
+            static bool Prefix(NetworkPlayer networkPlayer)
             {
                 int characterFaceIdentifier = 0;
                 PlayerInitialDetails playerInitialDetails = new PlayerInitialDetails
                 {
-                    Name = generateRandomName(),
+                    Name = carbonNameLink[networkPlayer.id],
                     CharacterVoicePitch = 1f,
                     CharacterFaceIdentifier = characterFaceIdentifier
                 };
+                carbonNameLink.Remove(networkPlayer.id);
                 instant.serverGameManager.HandlePlayerInitialDetails(playerInitialDetails, networkPlayer);
                 AutonomousPlayerInputHandler input = new AutonomousPlayerInputHandler(instant.commonGlobalVariables.BotAutoMove);
                 CarbonPlayerRepresentation value = new CarbonPlayerRepresentation
