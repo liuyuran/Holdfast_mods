@@ -144,6 +144,11 @@ namespace ServerModFramework
             }
         }
 
+        public static CarbonPlayer getCarbonPlayer(int playerId) {
+            if (!carbonLink.ContainsKey(playerId)) return null;
+            return carbonLink[playerId];
+        }
+
         public static int addCarbonPlayer(string name)
         {
             NetworkPlayer networkPlayer = Network.NetworkClientAllocator.Allocate();

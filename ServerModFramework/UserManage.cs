@@ -30,7 +30,7 @@ namespace ServerModFramework
         /// 玩家死亡监听器
         public static event PlayerDead playerDeadDelegate;
 
-        private static Dictionary<ulong, int> steamIdToLocalId = new Dictionary<ulong, int>();
+        public static Dictionary<ulong, int> steamIdToLocalId = new Dictionary<ulong, int>();
         private static Dictionary<int, ulong> netIdToSteamId = new Dictionary<int, ulong>();
 
         [HarmonyPatch(typeof(ServerPlayerActionsLogFileHandler), "AddPlayerJoinedEntry")]
