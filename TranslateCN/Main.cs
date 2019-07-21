@@ -149,15 +149,14 @@ namespace TranslateCN
             }
         }
 
-        [HarmonyPatch(typeof(UIClassSelectionPanel))]
-        [HarmonyPatch("SetSelectedClass")]
+        [HarmonyPatch(typeof(HoldfastLanguageManager))]
+        [HarmonyPatch("GetTerm_ClassRole")]
         public static class UIClassSelectionPanelPatch
         {
-            static void Postfix(UIClassSelectionPanel __instance)
+            static void Postfix(ClassRole classRole, ref string __result)
             {
                 if (!enabled) return;
-                string __result = __instance.classRoleLabel.text;
-                string Term = "Force Role/" + __result;
+                string Term = "Force Role/" + classRole;
                 if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
                 {
                     logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
@@ -166,7 +165,7 @@ namespace TranslateCN
                 if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
-                    __instance.classRoleLabel.text = (string)translateBox[Term];
+                    __result = (string)translateBox[Term];
                 }
             }
         }
@@ -192,17 +191,6 @@ namespace TranslateCN
                 }
 
                 __result = __instance.typeTextField.text;
-                Term = "Spawn Type/" + __result;
-                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
-                {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
-                    missBox.Add(Term, __result);
-                }
-                if (translateBox.ContainsKey(Term) &&
-                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
-                {
-                    __instance.typeTextField.text = (string)translateBox[Term];
-                }
             }
         }
 
