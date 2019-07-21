@@ -17,7 +17,7 @@ namespace ServerModFramework
 {
     public delegate void PlayerJoin(ulong steamId);
     public delegate void PlayerLeave(ulong steamId);
-    public delegate void PlayerSpawn(ulong steamId);
+    public delegate void PlayerSpawn(int playerId);
     public delegate void PlayerDead(ulong steamId);
     public static partial class Framework
     {
@@ -62,20 +62,21 @@ namespace ServerModFramework
             static bool Prefix(NetworkPlayer networkPlayer)
             {
                 if (networkPlayer == null) return true;
+                if (!netIdToSteamId.ContainsKey(networkPlayer.id) || netIdToSteamId[networkPlayer.id] == 0 || playerLeaveDelegate == null) return true;
+                playerLeaveDelegate(netIdToSteamId[networkPlayer.id]);
                 netIdToSteamId.Remove(networkPlayer.id);
-                if (netIdToSteamId[networkPlayer.id] == 0 || playerLeaveDelegate == null) return true;
-                if(playerLeaveDelegate != null) playerLeaveDelegate(netIdToSteamId[networkPlayer.id]);
                 return true;
             }
         }
 
-        [HarmonyPatch(typeof(ServerRoundPlayerManager), "SpawnNetworkPlayer")]
+        [HarmonyPatch(typeof(ServerPlayerSpawningHandler), "SpawnNetworkPlayer")]
         private static class UserManage_SpawnNetworkPlayer_Patch
         {
             static void Postfix(NetworkPlayer networkPlayer)
             {
-                if(networkPlayer != null && playerSpawnDelegate != null && netIdToSteamId.ContainsKey(networkPlayer.id))
-                    playerSpawnDelegate(netIdToSteamId[networkPlayer.id]);
+                logger.Log("玩家进入");
+                if(networkPlayer != null && playerSpawnDelegate != null)
+                    playerSpawnDelegate(networkPlayer.id);
             }
         }
 

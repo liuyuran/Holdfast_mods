@@ -20,11 +20,22 @@ namespace ServerModFramework
         private static List<int> carbonList = new List<int>();
         private static Dictionary<int, CarbonPlayer> carbonLink = new Dictionary<int, CarbonPlayer>();
         private static Dictionary<int, string> carbonNameLink = new Dictionary<int, string>();
-        private static ServerComponentReferenceManager instant => ServerComponentReferenceManager.ServerInstance;
+        private static ServerComponentReferenceManager instant {
+            get
+            {
+                return ServerComponentReferenceManager.ServerInstance;
+            }
+        }
         public class CarbonPlayer
         {
             private NetworkPlayer networkPlayer;
-            public NetworkPlayer getNetworkPlayer => networkPlayer;
+            public NetworkPlayer getNetworkPlayer
+            {
+                get
+                {
+                    return networkPlayer;
+                }
+            }
             public CarbonPlayerRepresentation representation { get; private set; }
             public CarbonPlayer(NetworkPlayer networkPlayer)
             {
@@ -48,7 +59,7 @@ namespace ServerModFramework
             {
                 this.representation = representation;
             }
-            public void spawn(FactionCountry factionCountry, PlayerClass playerClass, SpawnSection spawnSection)
+            public void spawn(FactionCountry factionCountry, PlayerClass playerClass)
             {
                 if (representation == null) return;
                 int currentRoundIdentifier = instant.serverGameManager.CurrentRoundIdentifier;
@@ -61,8 +72,8 @@ namespace ServerModFramework
                     dfList.Release();
                     return;
                 }
+                int sectionIdentifier = dfList[0].sectionIdentifier;
                 dfList.Release();
-                int sectionIdentifier = spawnSection.sectionIdentifier;
                 int characterHeadIdentifier = 1;
                 CharacterVoiceIdentifier characterVoiceIdentifier = getDefaultVoice(factionCountry);
                 ClientChosenSpawnSettings spawnSettings = new ClientChosenSpawnSettings
@@ -104,7 +115,7 @@ namespace ServerModFramework
                     }
                 }
             }
-            public void activeAction(PlayerActions playerAction, Vector3 look, MeleeStrikeType meleeStrike = MeleeStrikeType.None)
+            public void activeAction(PlayerActions playerAction, Vector3 look, MeleeStrikeType meleeStrike)
             {
                 ServerRoundPlayer player = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(networkPlayer.id);
                 if (player == null) return;
@@ -153,6 +164,9 @@ namespace ServerModFramework
         {
             NetworkPlayer networkPlayer = Network.NetworkClientAllocator.Allocate();
             networkPlayer.isCarbonPlayer = true;
+            carbonList.Add(networkPlayer.id);
+            carbonLink.Add(networkPlayer.id, new CarbonPlayer(networkPlayer));
+            carbonNameLink.Add(networkPlayer.id, name);
             ClientSteamAuthSettings auth = new ClientSteamAuthSettings
             {
                 SteamID = 0UL,
@@ -162,9 +176,6 @@ namespace ServerModFramework
                 MachineSecurityID = StringCipher.Hash(SystemInfo.deviceUniqueIdentifier, 0UL)
             };
             instant.serverGameManager.HandleSteamAuthSettings(auth, networkPlayer);
-            carbonList.Add(networkPlayer.id);
-            carbonLink.Add(networkPlayer.id, new CarbonPlayer(networkPlayer));
-            carbonNameLink.Add(networkPlayer.id, name);
             return networkPlayer.id;
         }
 
@@ -188,7 +199,6 @@ namespace ServerModFramework
                     CharacterVoicePitch = 1f,
                     CharacterFaceIdentifier = characterFaceIdentifier
                 };
-                carbonNameLink.Remove(networkPlayer.id);
                 instant.serverGameManager.HandlePlayerInitialDetails(playerInitialDetails, networkPlayer);
                 AutonomousPlayerInputHandler input = new AutonomousPlayerInputHandler(instant.commonGlobalVariables.BotAutoMove);
                 CarbonPlayerRepresentation value = new CarbonPlayerRepresentation
@@ -198,6 +208,7 @@ namespace ServerModFramework
                     networkPlayer = networkPlayer
                 };
                 if(carbonLink.ContainsKey(networkPlayer.id)) carbonLink[networkPlayer.id].bindRepresentation(value);
+                carbonNameLink.Remove(networkPlayer.id);
                 return false;
             }
         }
