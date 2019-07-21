@@ -37,6 +37,11 @@ namespace RconRepeater
                 SendAuthImmediately = true,
                 Debug = true,
                 UseCustomCommandHandler = true,
+                EnableIpWhitelist = false,
+                MaxConnections = uint.MaxValue,
+                MaxConnectionsPerIp = uint.MaxValue,
+                MaxPasswordTries = 3,
+                BanMinutes = 60 * 24,
                 Password = ServerConfigurationFileManager.CurrentConfigurationFile.ServerAdminPassword
             };
             server.OnCommandReceived += Server_OnCommandReceived;
@@ -50,7 +55,7 @@ namespace RconRepeater
             Exception ex;
             ServerComponentReferenceManager.ServerInstance.console
                             .ExecuteInput(UnicodeToString(command), -1, out text, out flag2, out ex, true);
-            return text;
+            return StringToUnicode(text);
         }
 
         private static string StringToUnicode(string s)
