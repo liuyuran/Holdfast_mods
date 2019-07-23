@@ -12,8 +12,15 @@ namespace PubLineBot
     public class Main
     {
         private static UnityModManager.ModEntry.ModLogger logger;
+
+        private static int maxBot = 5;
+
         private static List<ServerRoundPlayer> players = new List<ServerRoundPlayer>();
+        private static HashSet<ServerRoundPlayer> commanders = new HashSet<ServerRoundPlayer>();
         private static Dictionary<int, Vector3> posCache = new Dictionary<int, Vector3>();
+        private static Dictionary<int, List<int>> playerToBot = new Dictionary<int, List<int>>();
+
+        private static Dictionary<int, Queue<Vector3>> wayPoint = new Dictionary<int, Queue<Vector3>>();
         private static ServerComponentReferenceManager instant
         {
             get
@@ -27,13 +34,40 @@ namespace PubLineBot
             var harmony = HarmonyInstance.Create(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             Framework.playerSpawnDelegate += Framework_playerSpawnDelegate;
+            Framework.playerDeadDelegate += Framework_playerDeadDelegate;
+            Framework.playerLeaveDelegate += Framework_playerDeadDelegate;
+            Framework.countDownDelegate += Framework_countDownDelegate;
+            Framework.playerActionUpdateDelegate += Framework_playerActionUpdateDelegate;
             logger.Log("线列机器人加载完成");
             return true;
         }
 
+        private static void Framework_playerActionUpdateDelegate(ulong steamId, PlayerActions action)
+        {
+            // TODO 切换行进模式
+        }
+
+        private static void Framework_countDownDelegate(int roundTime)
+        {
+            // TODO 每秒获取所有人的位置，并塞进队列，然后通知机器人行进
+        }
+
+        private static void Framework_playerDeadDelegate(ulong steamId)
+        {
+            int playerId = Framework.getPlayerId(steamId);
+            if (playerId == -1) return;
+            if (!playerToBot.ContainsKey(playerId)) return;
+            playerToBot[playerId].ForEach((int id)=> {
+                Framework.removeCarbonPlayer(id);
+            });
+            playerToBot.Remove(playerId);
+            ServerRoundPlayer serverRoundPlayer =
+                instant.serverRoundPlayerManager.ResolveServerRoundPlayer(playerId);
+            commanders.Remove(serverRoundPlayer);
+        }
+
         private static void Framework_playerSpawnDelegate(int playerId)
         {
-            logger.Log("玩家进入战场，机器人开始入场");
             ServerRoundPlayer serverRoundPlayer = 
                 instant.serverRoundPlayerManager.ResolveServerRoundPlayer(playerId);
             if (serverRoundPlayer.NetworkPlayer.isCarbonPlayer && serverRoundPlayer.SpawnData.ClassType != PlayerClass.ArmyInfantryOfficer) {
@@ -48,12 +82,12 @@ namespace PubLineBot
                     vector = vector.ReplaceY(raycastHit2.point.y);
                     serverRoundPlayer.PlayerBase.Teleport(vector);
                 }
-                logger.Log("定位目标:" + vector.ToString());
                 serverRoundPlayer.PlayerBase.Teleport(vector);
                 posCache.Remove(playerId);
             }
             else {
                 players.Add(serverRoundPlayer);
+                commanders.Add(serverRoundPlayer);
             }
         }
 
@@ -66,11 +100,10 @@ namespace PubLineBot
                 {
                     Vector3 position = serverRoundPlayer.PlayerTransform.position;
                     List<int> ids = new List<int>();
-                    for (int i = 0; i < 5; i++)
+                    for (int i = 0; i < maxBot; i++)
                     {
                         ids.Add(Framework.addCarbonPlayer("test"));
                     }
-                    logger.Log("传送基点:" + position.ToString());
                     ids.ForEach((id) =>
                     {
                         position.z += 1;
@@ -78,6 +111,7 @@ namespace PubLineBot
                         player.spawn(serverRoundPlayer.PlayerStartData.Faction, PlayerClass.ArmyLineInfantry);
                         posCache.Add(id, position);
                     });
+                    playerToBot.Add(serverRoundPlayer.NetworkPlayerID, ids);
                 });
                 players.Clear();
             }

@@ -7,9 +7,8 @@
  * @date 2019-07-04
  */
 
- using Harmony12;
+using Harmony12;
 using HoldfastGame;
-using System.Collections;
 using System.Collections.Generic;
 using uLink;
 
@@ -19,6 +18,7 @@ namespace ServerModFramework
     public delegate void PlayerLeave(ulong steamId);
     public delegate void PlayerSpawn(int playerId);
     public delegate void PlayerDead(ulong steamId);
+    public delegate void PlayerActionUpdate(ulong steamId, PlayerActions action);
     public static partial class Framework
     {
         /// 玩家进入监听器
@@ -29,9 +29,17 @@ namespace ServerModFramework
         public static event PlayerSpawn playerSpawnDelegate;
         /// 玩家死亡监听器
         public static event PlayerDead playerDeadDelegate;
+        /// 玩家动作监听器
+        public static event PlayerActionUpdate playerActionUpdateDelegate;
 
-        public static Dictionary<ulong, int> steamIdToLocalId = new Dictionary<ulong, int>();
+        private static Dictionary<ulong, int> steamIdToLocalId = new Dictionary<ulong, int>();
         private static Dictionary<int, ulong> netIdToSteamId = new Dictionary<int, ulong>();
+
+        public static int getPlayerId(ulong steamId)
+        {
+            if (!steamIdToLocalId.ContainsKey(steamId)) return -1;
+            return steamIdToLocalId[steamId];
+        }
 
         [HarmonyPatch(typeof(ServerPlayerActionsLogFileHandler), "AddPlayerJoinedEntry")]
         private static class PlayerJoin_Patch
@@ -74,7 +82,6 @@ namespace ServerModFramework
         {
             static void Postfix(NetworkPlayer networkPlayer)
             {
-                logger.Log("玩家进入");
                 if(networkPlayer != null && playerSpawnDelegate != null)
                     playerSpawnDelegate(networkPlayer.id);
             }
@@ -87,6 +94,16 @@ namespace ServerModFramework
             {
                 if(newHealth <= 0 && !carbonList.Contains(playerID) && netIdToSteamId.ContainsKey(playerID))
                     playerDeadDelegate(netIdToSteamId[playerID]);
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerBase), "ExecutePlayerAction")]
+        private static class UserManage_ApplyPlayerActions_Patch
+        {
+            static void Postfix(PlayerBase __instance, PlayerActions action)
+            {
+                if (playerActionUpdateDelegate == null || !netIdToSteamId.ContainsKey(__instance.PlayerID)) return;
+                playerActionUpdateDelegate(netIdToSteamId[__instance.PlayerID], action);
             }
         }
     }
