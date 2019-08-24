@@ -35,32 +35,69 @@ namespace PubLineBot
             Framework.playerSpawnDelegate += Framework_playerSpawnDelegate;
             Framework.playerDeadDelegate += Framework_playerDeadDelegate;
             Framework.playerLeaveDelegate += Framework_playerDeadDelegate;
-            Framework.countDownDelegate += Framework_countDownDelegate;
             Framework.playerActionUpdateDelegate += Framework_playerActionUpdateDelegate;
+            Framework.roundEndDelegate += Framework_roundEndDelegate;
             logger.Log("线列机器人加载完成");
             return true;
+        }
+
+        private static void Framework_roundEndDelegate(GameDetails detail)
+        {
+            playerToBot.ToDfList().ForEach((KeyValuePair<int, List<int>> pair) =>
+            {
+                pair.Value.ForEach((int id) =>
+                {
+                    Framework.removeCarbonPlayer(id);
+                });
+                playerToBot.Remove(pair.Key);
+                ServerRoundPlayer serverRoundPlayer =
+                    instant.serverRoundPlayerManager.ResolveServerRoundPlayer(pair.Key);
+                wayPoint.Remove(serverRoundPlayer.NetworkPlayerID);
+            });
         }
 
         private static void Framework_playerActionUpdateDelegate(ulong steamId, PlayerActions action)
         {
             // TODO 切换行进模式
+            ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(Framework.getPlayerId(steamId));
+            logger.Log(serverRoundPlayer.ServerPlayerBase.name + action.ToString() + serverRoundPlayer.PlayerBase.transform.forward.ToString());
         }
 
-        private static void Framework_countDownDelegate(int roundTime)
+        [HarmonyPatch(typeof(ServerCarbonPlayersManager), "FixedUpdate")]
+        private static class FixedUpdate_Patch
         {
-            // TODO 每秒获取所有人的位置，并塞进队列，然后通知机器人行进
-            wayPoint.ToDfList().ForEach((KeyValuePair<int, Queue<Vector3>> pair)=> {
-                ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(pair.Key);
-                do
-                {
+            static void Postfix()
+            {
+                wayPoint.ToDfList().ForEach((KeyValuePair<int, Queue<Vector3>> pair) => {
+                    ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(pair.Key);
+                    List<Vector3> list = wayPoint[pair.Key].ToDfList().ToList();
+                    if ((serverRoundPlayer.PlayerBase.transform.position - list[list.Count - 1]).magnitude < 1) return;
+                    wayPoint[pair.Key].Dequeue();
                     wayPoint[pair.Key].Enqueue(serverRoundPlayer.PlayerTransform.position);
-                } while (wayPoint[pair.Key].Count == maxBot);
-                if (wayPoint[pair.Key].Count > maxBot) wayPoint[pair.Key].Dequeue();
-                /*int index = 0;
-                playerToBot[pair.Key].ForEach((int id) => {
-                    Framework.getCarbonPlayer(id).activeAction(PlayerActions.Run, wayPoint[pair.Key].ToDfList()[index++], MeleeStrikeType.None);
-                });*/
-            });
+                    list = wayPoint[pair.Key].ToDfList().ToList();
+                    int index = 1;
+                    playerToBot[pair.Key].ForEach((int id) => {
+                        ServerRoundPlayer bot = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(id);
+                        int nowIndex = index++;
+                        Vector3 target = serverRoundPlayer.PlayerTransform.position - (nowIndex * serverRoundPlayer.PlayerTransform.forward) - bot.PlayerTransform.position;
+                        if (target.magnitude < 2f)
+                        {
+                            target.x = 0;
+                            target.z = 0;
+                        }
+                        target.y = getRotation(
+                            bot.PlayerBase.transform.position
+                            ).eulerAngles.y;
+                        // logger.Log(id + " : " + bot.PlayerBase.transform.rotation + " , " + bot.PlayerBase.transform.forward);
+                        Framework.getCarbonPlayer(id).activeAction(PlayerActions.None, target, MeleeStrikeType.None);
+                    });
+                });
+            }
+        }
+
+        private static Quaternion getRotation(Vector3 position)
+        {
+            return Quaternion.Euler(position.x, position.z, 0f);
         }
 
         private static void Framework_playerDeadDelegate(ulong steamId)
@@ -82,7 +119,6 @@ namespace PubLineBot
             ServerRoundPlayer serverRoundPlayer = 
                 instant.serverRoundPlayerManager.ResolveServerRoundPlayer(playerId);
             if (serverRoundPlayer.NetworkPlayer.isCarbonPlayer && serverRoundPlayer.SpawnData.ClassType != PlayerClass.ArmyInfantryOfficer) {
-                logger.Log("NPC重生：" + playerId);
                 if (!posCache.ContainsKey(playerId)) return;
                 Vector3 vector = posCache[playerId];
                 vector = vector.ReplaceY(200f);
@@ -99,7 +135,6 @@ namespace PubLineBot
             }
             else if(wayPoint.ContainsKey(serverRoundPlayer.NetworkPlayerID) && serverRoundPlayer.SpawnData.ClassType == PlayerClass.ArmyInfantryOfficer)
             {
-                logger.Log("军官复生：" + playerId);
                 playerToBot[playerId].ForEach((int id) => {
                     Framework.removeCarbonPlayer(id);
                 });
@@ -108,19 +143,21 @@ namespace PubLineBot
             }
             else if(serverRoundPlayer.SpawnData.ClassType == PlayerClass.ArmyInfantryOfficer)
             {
-                logger.Log("军官出生：" + playerId);
                 players.Add(serverRoundPlayer);
-                wayPoint.Add(serverRoundPlayer.NetworkPlayerID, new Queue<Vector3>());
+                Queue<Vector3> queue = new Queue<Vector3>();
+                Vector3 basePos = serverRoundPlayer.PlayerBase.transform.position;
+                wayPoint.Add(serverRoundPlayer.NetworkPlayerID, queue);
+                for (int i = 0; i < maxBot; i++)
+                {
+                    basePos.z += 1;
+                    queue.Enqueue(basePos);
+                }
             } else if(wayPoint.ContainsKey(serverRoundPlayer.NetworkPlayerID))
             {
-                logger.Log("军官转士兵：" + playerId);
                 playerToBot[playerId].ForEach((int id) => {
                     Framework.removeCarbonPlayer(id);
                 });
                 wayPoint.Remove(serverRoundPlayer.NetworkPlayerID);
-            } else
-            {
-                logger.Log("未知出生：" + playerId);
             }
         }
 
@@ -135,7 +172,7 @@ namespace PubLineBot
                     List<int> ids = new List<int>();
                     for (int i = 0; i < maxBot; i++)
                     {
-                        ids.Add(Framework.addCarbonPlayer("test"));
+                        ids.Add(Framework.addCarbonPlayer("test01"));
                     }
                     ids.ForEach((id) =>
                     {
@@ -144,6 +181,7 @@ namespace PubLineBot
                         player.spawn(serverRoundPlayer.PlayerStartData.Faction, PlayerClass.ArmyLineInfantry);
                         posCache.Add(id, position);
                     });
+                    if (playerToBot.ContainsKey(serverRoundPlayer.NetworkPlayerID)) playerToBot.Remove(serverRoundPlayer.NetworkPlayerID);
                     playerToBot.Add(serverRoundPlayer.NetworkPlayerID, ids);
                 });
                 players.Clear();

@@ -34,8 +34,9 @@
     <Reference Include="0Harmony12">
       <HintPath>..\..\Managed\0Harmony12.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\Managed\Assembly-CSharp.dll</HintPath>
+    <Reference Include="Assembly-CSharp, Version=0.32.7114.28816, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Steam\steamapps\common\Holdfast Nations At War\Holdfast NaW_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\Steam\steamapps\common\Holdfast Nations At War\Holdfast NaW_Data\Managed\Newtonsoft.Json.dll</HintPath>
@@ -58,6 +59,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BotInputHandler.cs" />
+    <Compile Include="OrderManager.cs" />
     <Compile Include="BroadcastManage.cs" />
     <Compile Include="CarbonManage.cs" />
     <Compile Include="CommandManage.cs" />
