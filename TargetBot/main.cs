@@ -1,10 +1,8 @@
 ﻿using Harmony12;
 using ServerModFramework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
+using UnityEngine;
 using UnityModManagerNet;
 
 namespace TargetBot
@@ -13,6 +11,7 @@ namespace TargetBot
     {
         public static bool enabled;
         public static UnityModManager.ModEntry.ModLogger logger;
+        private static List<int> botList = new List<int>();
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
@@ -20,10 +19,19 @@ namespace TargetBot
             logger = modEntry.Logger;
             logger.Log("插件开始加载 patch id:" + modEntry.Info.Id);
             Framework.playerCommandDelegate += Framework_playerCommandDelegate;
+            Framework.roundEndDelegate += Framework_roundEndDelegate;
             var harmony = HarmonyInstance.Create(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             logger.Log("插件注入完毕");
             return true;
+        }
+
+        private static void Framework_roundEndDelegate(HoldfastGame.GameDetails detail)
+        {
+            botList.ForEach((int item)=>
+            {
+                Framework.removeCarbonPlayer(item);
+            });
         }
 
         private static string Framework_playerCommandDelegate(string modName, object[] arguments, ulong steamID, out bool success)
@@ -48,5 +56,9 @@ namespace TargetBot
             enabled = value;
             return true;
         }
+
+        private static void spawnTarget(Vector3 position, Vector3 forward, int distance, int num) { }
+
+        private static void clearTarget() { }
     }
 }
