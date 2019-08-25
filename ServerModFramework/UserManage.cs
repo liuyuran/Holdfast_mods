@@ -7,9 +7,8 @@
  * @date 2019-07-04
  */
 
- using Harmony12;
+using Harmony12;
 using HoldfastGame;
-using System.Collections;
 using System.Collections.Generic;
 using uLink;
 
@@ -17,15 +16,30 @@ namespace ServerModFramework
 {
     public delegate void PlayerJoin(ulong steamId);
     public delegate void PlayerLeave(ulong steamId);
+    public delegate void PlayerSpawn(int playerId);
+    public delegate void PlayerDead(ulong steamId);
+    public delegate void PlayerActionUpdate(ulong steamId, PlayerActions action);
     public static partial class Framework
     {
         /// 玩家进入监听器
         public static event PlayerJoin playerJoinDelegate;
         /// 玩家离开监听器
         public static event PlayerLeave playerLeaveDelegate;
+        /// 玩家出生监听器
+        public static event PlayerSpawn playerSpawnDelegate;
+        /// 玩家死亡监听器
+        public static event PlayerDead playerDeadDelegate;
+        /// 玩家动作监听器
+        public static event PlayerActionUpdate playerActionUpdateDelegate;
 
         private static Dictionary<ulong, int> steamIdToLocalId = new Dictionary<ulong, int>();
         private static Dictionary<int, ulong> netIdToSteamId = new Dictionary<int, ulong>();
+
+        public static int getPlayerId(ulong steamId)
+        {
+            if (!steamIdToLocalId.ContainsKey(steamId)) return -1;
+            return steamIdToLocalId[steamId];
+        }
 
         [HarmonyPatch(typeof(ServerPlayerActionsLogFileHandler), "AddPlayerJoinedEntry")]
         private static class PlayerJoin_Patch
@@ -46,7 +60,7 @@ namespace ServerModFramework
             {
                 if(netIdToSteamId.ContainsKey(roundPlayerInformation.NetworkPlayer.id))
                     netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
-                playerJoinDelegate(roundPlayerInformation.SteamID);
+                if (playerJoinDelegate != null) playerJoinDelegate(roundPlayerInformation.SteamID);
             }
         }
 
@@ -56,10 +70,40 @@ namespace ServerModFramework
             static bool Prefix(NetworkPlayer networkPlayer)
             {
                 if (networkPlayer == null) return true;
-                netIdToSteamId.Remove(networkPlayer.id);
-                if (netIdToSteamId[networkPlayer.id] == 0 || playerLeaveDelegate == null) return true;
+                if (!netIdToSteamId.ContainsKey(networkPlayer.id) || netIdToSteamId[networkPlayer.id] == 0 || playerLeaveDelegate == null) return true;
                 playerLeaveDelegate(netIdToSteamId[networkPlayer.id]);
+                netIdToSteamId.Remove(networkPlayer.id);
                 return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(ServerPlayerSpawningHandler), "SpawnNetworkPlayer")]
+        private static class UserManage_SpawnNetworkPlayer_Patch
+        {
+            static void Postfix(NetworkPlayer networkPlayer)
+            {
+                if(networkPlayer != null && playerSpawnDelegate != null)
+                    playerSpawnDelegate(networkPlayer.id);
+            }
+        }
+
+        [HarmonyPatch(typeof(ServerPlayerDamageManager), "CreatePlayerHealthChangePacket")]
+        private static class UserManage_CreatePlayerHealthChangePacket_Patch
+        {
+            static void Postfix(int playerID, float newHealth)
+            {
+                if(newHealth <= 0 && !carbonList.Contains(playerID) && netIdToSteamId.ContainsKey(playerID))
+                    playerDeadDelegate(netIdToSteamId[playerID]);
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerBase), "ExecutePlayerAction")]
+        private static class UserManage_ApplyPlayerActions_Patch
+        {
+            static void Postfix(PlayerBase __instance, PlayerActions action)
+            {
+                if (playerActionUpdateDelegate == null || !netIdToSteamId.ContainsKey(__instance.PlayerID)) return;
+                playerActionUpdateDelegate(netIdToSteamId[__instance.PlayerID], action);
             }
         }
     }
