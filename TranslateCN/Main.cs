@@ -19,7 +19,6 @@ namespace TranslateCN
         public static UnityModManager.ModEntry.ModLogger logger;
         public static Hashtable translateBox = new Hashtable();
         public static Hashtable translateReplace = new Hashtable();
-        public static Hashtable missBox = new Hashtable();
         public static string basePath;
         public static bool english = false;
 
@@ -27,6 +26,7 @@ namespace TranslateCN
         {
             basePath = modEntry.Path;
             modEntry.OnToggle = OnToggle;
+            modEntry.OnGUI = OnGUI;
             logger = modEntry.Logger;
             logger.Log("翻译插件开始加载 patch id:" + modEntry.Info.Id);
             loadLanguageFile();
@@ -37,7 +37,37 @@ namespace TranslateCN
             return true;
         }
 
-        public static void loadReplaceBox()
+        static void OnGUI(UnityModManager.ModEntry modEntry)
+        {
+            if (GUILayout.Button("导出所有文本"))
+            {
+                exportLangugeFile();
+            }
+
+            if (GUILayout.Button("重载翻译文本"))
+            {
+                loadLanguageFile();
+            }
+        }
+
+        private static void exportLangugeFile() {
+            List<string> categories = LocalizationManager.GetCategories();
+            string obj = "{";
+            categories.ForEach((string item)=> {
+                logger.Log(item + ":");
+                LocalizationManager.GetTermsList(item).ForEach((string term) => {
+                    obj += string.Format("\"{0}\":\"{1}\",", term, 
+                        (translateBox.ContainsKey(term) ? 
+                        translateBox[term] : 
+                        LocalizationManager.GetTranslation(term, true, 0, true, false, null, null)));
+                });
+            });
+            obj += "}";
+            string path = string.Format("{0}{1}", basePath, "dict.json");
+            File.WriteAllText(path, obj.Replace("\\", "\\\\").Replace("\r", "\\r").Replace("\n", "\\n"));
+        }
+
+        private static void loadReplaceBox()
         {
             translateReplace.Add("（", "( ");
             translateReplace.Add("）", " )");
@@ -57,25 +87,8 @@ namespace TranslateCN
         public static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
         {
             enabled = value;
-            if (!enabled)
-            {
-                string obj = "{";
-                foreach (string key in missBox.Keys)
-                {
-                    obj += string.Format("\"{0}\":\"{1}\",", key, missBox[key]);
-                }
-                obj += "}";
-                string path = string.Format("{0}{1}", basePath, "miss.json");
-                File.WriteAllText(path, obj);
-                logger.Log("缺失的翻译已保存到" + path);
-            }
-            else
-            {
-                loadLanguageFile();
-            }
             return true;
         }
-
         private static void loadLanguageFile()
         {
             translateBox.Clear();
@@ -99,7 +112,6 @@ namespace TranslateCN
                             value = value.Replace(key, (string)translateReplace[key]);
                         }
                         translateBox.Add(item.Key, value);
-                        if (missBox.Contains(item.Key)) missBox.Remove(item.Key);
                         count++;
                     }
                 }
@@ -115,11 +127,6 @@ namespace TranslateCN
             {
                 if (!enabled) return;
                 if (Term == "NotoSansCJKkr-Medium SDF" || __result == null) return;
-                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
-                {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
-                    missBox.Add(Term, __result);
-                }
                 if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
@@ -136,36 +143,10 @@ namespace TranslateCN
             {
                 if (!enabled) return;
                 string Term = "Force Class/" + Enum.GetName(typeof(FactionCountry), faction) + "/" + Enum.GetName(typeof(PlayerClass), playerClass);
-                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
-                {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
-                    missBox.Add(Term, __result);
-                }
                 if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
                     __result.playerClassName = (string)translateBox[Term];
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(HoldfastLanguageManager))]
-        [HarmonyPatch("GetTerm_ClassRole")]
-        public static class UIClassSelectionPanelPatch
-        {
-            static void Postfix(ClassRole classRole, ref string __result)
-            {
-                if (!enabled) return;
-                string Term = "Force Role/" + classRole;
-                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
-                {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
-                    missBox.Add(Term, __result);
-                }
-                if (translateBox.ContainsKey(Term) &&
-                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
-                {
-                    __result = (string)translateBox[Term];
                 }
             }
         }
@@ -179,11 +160,6 @@ namespace TranslateCN
                 if (!enabled) return;
                 string __result = __instance.nameTextField.text;
                 string Term = "Spawn Name/" + __result;
-                if (!translateBox.ContainsKey(Term) && !missBox.ContainsKey(Term))
-                {
-                    logger.Log(string.Format("发现新词条:{0}:{1}", Term, __result));
-                    missBox.Add(Term, __result);
-                }
                 if (translateBox.ContainsKey(Term) &&
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
@@ -191,6 +167,12 @@ namespace TranslateCN
                 }
 
                 __result = __instance.typeTextField.text;
+                Term = "Spawn Type/" + __result;
+                if (translateBox.ContainsKey(Term) &&
+                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
+                {
+                    __instance.typeTextField.text = (string)translateBox[Term];
+                }
             }
         }
 
