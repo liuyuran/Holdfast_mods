@@ -20,9 +20,9 @@ namespace ServerModFramework
         [HarmonyPatch(typeof(ServerOfficerOrderManager), "BroadcastStartOfficerOrder")]
         private static class OrderManager_BroadcastStartOfficerOrder_Patch
         {
-            static void Postfix(RequestStartOfficerOrderPacket packet)
+            static void Postfix(RequestStartOfficerOrderPacket currentRequestPacket)
             {
-                officerOrderDelegate(true, packet);
+                officerOrderDelegate(true, currentRequestPacket);
             }
         }
 

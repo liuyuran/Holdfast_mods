@@ -54,6 +54,11 @@ namespace ServerModFramework
                         return CharacterVoiceIdentifier.Joseph_British_1;
                 }
             }
+            public void free()
+            {
+                ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(networkPlayer.id);
+                serverRoundPlayer.ServerPlayerBase.Despawn();
+            }
             public void spawn(FactionCountry factionCountry, PlayerClass playerClass)
             {
                 int currentRoundIdentifier = instant.serverGameManager.CurrentRoundIdentifier;
@@ -164,6 +169,7 @@ namespace ServerModFramework
         public static void removeCarbonPlayer(int id)
         {
             if (!carbonList.Contains(id) || !carbonLink.ContainsKey(id)) return;
+            carbonLink[id].free();
             Network.NetworkClientAllocator.Deallocate(carbonLink[id].getNetworkPlayer, 0.0);
             carbonList.Remove(id);
             carbonLink.Remove(id);

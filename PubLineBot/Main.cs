@@ -17,6 +17,7 @@ namespace PubLineBot
 
         private static List<ServerRoundPlayer> players = new List<ServerRoundPlayer>();
         private static Dictionary<int, Vector3> posCache = new Dictionary<int, Vector3>();
+        private static Dictionary<int, Vector3> rotationCache = new Dictionary<int, Vector3>();
         private static Dictionary<int, List<int>> playerToBot = new Dictionary<int, List<int>>();
 
         private static Dictionary<int, Queue<Vector3>> wayPoint = new Dictionary<int, Queue<Vector3>>();
@@ -36,9 +37,36 @@ namespace PubLineBot
             Framework.playerDeadDelegate += Framework_playerDeadDelegate;
             Framework.playerLeaveDelegate += Framework_playerDeadDelegate;
             Framework.playerActionUpdateDelegate += Framework_playerActionUpdateDelegate;
+            Framework.officerOrderDelegate += Framework_officerOrderDelegate;
             Framework.roundEndDelegate += Framework_roundEndDelegate;
             logger.Log("线列机器人加载完成");
             return true;
+        }
+
+        private static void Framework_officerOrderDelegate(bool isStart, RequestStartOfficerOrderPacket currentRequestPacket)
+        {
+            int officerId = currentRequestPacket.officerNetworkPlayer.id;
+            logger.Log(currentRequestPacket.officerOrderType.ToString());
+            playerToBot[officerId].ForEach((int id) => {
+                switch(currentRequestPacket.officerOrderType)
+                {
+                    case OfficerOrderType.FormLine:
+                        Vector3 target = new Vector3();
+                        target.x = 0;
+                        target.z = 0;
+                        target.y = currentRequestPacket.orderRotationY - 180;
+                        if (rotationCache.ContainsKey(id)) rotationCache[id] = target;
+                        else rotationCache.Add(id, target);
+                        Framework.getCarbonPlayer(id).activeAction(PlayerActions.None, target, MeleeStrikeType.None);
+                        break;
+                    case OfficerOrderType.MakeReady:
+                        Framework.getCarbonPlayer(id).activeAction(PlayerActions.StartAimingFirearm, rotationCache[id], MeleeStrikeType.None);
+                        break;
+                    case OfficerOrderType.Fire:
+                        Framework.getCarbonPlayer(id).activeAction(PlayerActions.FireFirearm, rotationCache[id], MeleeStrikeType.None);
+                        break;
+                }
+            });
         }
 
         private static void Framework_roundEndDelegate(GameDetails detail)
@@ -68,7 +96,7 @@ namespace PubLineBot
         {
             static void Postfix()
             {
-                wayPoint.ToDfList().ForEach((KeyValuePair<int, Queue<Vector3>> pair) => {
+                /*wayPoint.ToDfList().ForEach((KeyValuePair<int, Queue<Vector3>> pair) => {
                     ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(pair.Key);
                     List<Vector3> list = wayPoint[pair.Key].ToDfList().ToList();
                     if ((serverRoundPlayer.PlayerBase.transform.position - list[list.Count - 1]).magnitude < 1) return;
@@ -88,10 +116,9 @@ namespace PubLineBot
                         target.y = getRotation(
                             bot.PlayerBase.transform.position
                             ).eulerAngles.y;
-                        // logger.Log(id + " : " + bot.PlayerBase.transform.rotation + " , " + bot.PlayerBase.transform.forward);
                         Framework.getCarbonPlayer(id).activeAction(PlayerActions.None, target, MeleeStrikeType.None);
                     });
-                });
+                });*/
             }
         }
 

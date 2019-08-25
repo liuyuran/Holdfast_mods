@@ -59,7 +59,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BotInputHandler.cs" />
     <Compile Include="OrderManager.cs" />
     <Compile Include="BroadcastManage.cs" />
     <Compile Include="CarbonManage.cs" />
