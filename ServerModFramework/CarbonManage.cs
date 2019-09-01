@@ -56,8 +56,7 @@ namespace ServerModFramework
             }
             public void free()
             {
-                ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(networkPlayer.id);
-                serverRoundPlayer.ServerPlayerBase.Despawn();
+                instant.serverGameManager.PlayerDisconnected(networkPlayer);
             }
             public void spawn(FactionCountry factionCountry, PlayerClass playerClass)
             {

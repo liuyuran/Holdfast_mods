@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.IO;
 using HoldfastGame;
 using System;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace TranslateCN
 {
@@ -48,17 +51,57 @@ namespace TranslateCN
             {
                 loadLanguageFile();
             }
+
+            if (GUILayout.Button("云端更新翻译"))
+            {
+                updateLanguageFile();
+            }
         }
 
-        private static void exportLangugeFile() {
+        private static bool CheckValidationResult(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors)
+        {
+            return true; //总是接受   
+        }
+
+        private static void updateLanguageFile()
+        {
             List<string> categories = LocalizationManager.GetCategories();
             string obj = "{";
-            categories.ForEach((string item)=> {
+            translateBox.Clear();
+            ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(CheckValidationResult);
+            string url = "https://weblate.chaotic-quantum.site/api/translations/holdfast/plugin/zh_Hans/units/";
+            WebRequest w1 = WebRequest.Create(url);
+            w1.Headers.Add("Authorization", "Token 2wkfYAiXTL36SLELtYJdVWRnhsL8cKlwab0i92dA");
+            WebResponse w2 = w1.GetResponse();
+            Stream s1 = w2.GetResponseStream();
+            StreamReader sr = new StreamReader(s1);
+            string s2 = sr.ReadToEnd();
+            JToken o = JToken.Parse(s2);
+            JArray result = (JArray)o["results"];
+            foreach (JToken key in result)
+            {
+                if (translateBox.ContainsKey(key["context"])) continue;
+                translateBox.Add(key["context"].ToString().Substring(1), key["target"]);
+                obj += string.Format("\"{0}\":\"{1}\",", key["context"].ToString().Substring(1), key["target"]);
+            }
+            obj = obj.Substring(0, obj.Length - 1);
+            obj += "}";
+            string path = string.Format("{0}{1}", basePath, "lang.json");
+            File.WriteAllText(path, obj.Replace("\\", "\\\\").Replace("\r", "\\r").Replace("\n", "\\n"));
+        }
+
+        private static void exportLangugeFile()
+        {
+            List<string> categories = LocalizationManager.GetCategories();
+            string obj = "{";
+            categories.ForEach((string item) =>
+            {
                 logger.Log(item + ":");
-                LocalizationManager.GetTermsList(item).ForEach((string term) => {
-                    obj += string.Format("\"{0}\":\"{1}\",", term, 
-                        (translateBox.ContainsKey(term) ? 
-                        translateBox[term] : 
+                LocalizationManager.GetTermsList(item).ForEach((string term) =>
+                {
+                    obj += string.Format("\"{0}\":\"{1}\",", term,
+                        (translateBox.ContainsKey(term) ?
+                        translateBox[term] :
                         LocalizationManager.GetTranslation(term, true, 0, true, false, null, null)));
                 });
             });
@@ -131,47 +174,6 @@ namespace TranslateCN
                     LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
                 {
                     __result = (string)translateBox[Term];
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(CharacterClassDetailsRepository))]
-        [HarmonyPatch("ResolveCharacterClassInfo")]
-        public static class Class_Patch
-        {
-            static void Postfix(FactionCountry faction, PlayerClass playerClass, ref CharacterClassInfo __result)
-            {
-                if (!enabled) return;
-                string Term = "Force Class/" + Enum.GetName(typeof(FactionCountry), faction) + "/" + Enum.GetName(typeof(PlayerClass), playerClass);
-                if (translateBox.ContainsKey(Term) &&
-                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
-                {
-                    __result.playerClassName = (string)translateBox[Term];
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(UIRoundPlayersSpawnSectionRowPanel))]
-        [HarmonyPatch("SetDetails")]
-        public static class UIRoundPlayersSpawnSectionRowPanelPatch
-        {
-            static void Postfix(UIRoundPlayersSpawnSectionRowPanel __instance)
-            {
-                if (!enabled) return;
-                string __result = __instance.nameTextField.text;
-                string Term = "Spawn Name/" + __result;
-                if (translateBox.ContainsKey(Term) &&
-                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
-                {
-                    __instance.nameTextField.text = (string)translateBox[Term];
-                }
-
-                __result = __instance.typeTextField.text;
-                Term = "Spawn Type/" + __result;
-                if (translateBox.ContainsKey(Term) &&
-                    LocalizationManager.CurrentLanguage == "Chinese (Simplified)")
-                {
-                    __instance.typeTextField.text = (string)translateBox[Term];
                 }
             }
         }

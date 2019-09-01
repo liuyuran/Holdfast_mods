@@ -55,7 +55,7 @@ namespace CompereRobot
             switch (command)
             {
                 case "play":
-                    if (arguments.Length < 3)
+                    if (arguments.Length < 2)
                     {
                         success = false;
                         return "未指定剧本名";

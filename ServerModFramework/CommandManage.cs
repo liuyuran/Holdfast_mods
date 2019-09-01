@@ -115,7 +115,7 @@ namespace ServerModFramework
                 if (!entryText.StartsWith("/mod ")) return true;
                 string text = null;
                 bool success = false;
-                ulong steamId = (ulong)netIdToSteamId[messageInfo.sender.id];
+                ulong steamId = netIdToSteamId[messageInfo.sender.id];
                 string[] arguments = entryText.Split(' ');
                 if (arguments.Length >= 2)
                 {
@@ -124,6 +124,7 @@ namespace ServerModFramework
                         text = processor(arguments[1], arguments.RangeSubset(2, arguments.Length - 2), steamId, out success);
                         if (text != null || success)
                         {
+                            sendMessage(steamId, text);
                             break;
                         }
                     }
