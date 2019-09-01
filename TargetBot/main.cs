@@ -48,6 +48,9 @@ namespace TargetBot
                 Vector3 vector = posList[faction].Dequeue();
                 Framework.CarbonPlayer player = Framework.getCarbonPlayer(playerId);
                 player.teleport(vector);
+                vector.x = 0;
+                vector.z = 0;
+                Framework.getCarbonPlayer(playerId).activeAction(PlayerActions.FireFirearm, vector, MeleeStrikeType.None);
             }
         }
 
@@ -83,6 +86,10 @@ namespace TargetBot
                         success = false;
                         return "调用出错，请联系服务器管理员获取错误堆栈";
                     }
+                case "clear":
+                    clearTarget();
+                    success = true;
+                    return "开始清理";
                 default:
                     success = false;
                     return string.Format("不合法的操作符: %s", command);
@@ -103,37 +110,41 @@ namespace TargetBot
             {
                 Vector3 item;
                 if (i % 2 == 0)
-                    item = center + (i / 2) * forward_hoz.normalized;
+                    item = center + ((i / 2) + 1) * forward_hoz.normalized;
                 else
                     item = center - (i / 2) * forward_hoz.normalized;
+                item.y = vectorAngle(new Vector2(position.x, position.y), new Vector2(item.x, item.y));
                 posList[faction].Enqueue(item);
             }
+            posList.ToDfList().ForEach((KeyValuePair<FactionCountry, Queue<Vector3>> pair) =>
+            {
+                pair.Value.ToDfList().ForEach((Vector3 pos) =>
+                {
+                    int id = Framework.addCarbonPlayer("靶标机器人");
+                    botList.Add(id);
+                    Framework.CarbonPlayer player = Framework.getCarbonPlayer(id);
+                    player.spawn(pair.Key, PlayerClass.ArmyLineInfantry);
+                });
+            });
         }
 
         private static void clearTarget() {
+            logger.Log("botList(" + botList.Count + "):");
             botList.ForEach((int item) =>
             {
+                logger.Log("id:" + item);
                 Framework.removeCarbonPlayer(item);
             });
             botList.Clear();
             posList.Clear();
         }
 
-        [HarmonyPatch(typeof(ServerGameManager), "SpawnFromQueuedSettings")]
-        private static class SpawnFromQueuedSettings_Patch
+        private static float vectorAngle(Vector2 from, Vector2 to)
         {
-            static void Postfix()
-            {
-                posList.ToDfList().ForEach((KeyValuePair<FactionCountry, Queue<Vector3>> pair) =>
-                {
-                    pair.Value.ToDfList().ForEach((Vector3 pos)=>
-                    {
-                        int id = Framework.addCarbonPlayer("test01");
-                        Framework.CarbonPlayer player = Framework.getCarbonPlayer(id);
-                        player.spawn(pair.Key, PlayerClass.ArmyLineInfantry);
-                    });
-                });
-            }
+            float angle;
+            Vector3 cross = Vector3.Cross(from, to);
+            angle = Vector2.Angle(from, to);
+            return cross.z > 0 ? -angle : angle;
         }
     }
 }

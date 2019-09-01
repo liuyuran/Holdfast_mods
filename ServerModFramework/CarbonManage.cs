@@ -56,7 +56,7 @@ namespace ServerModFramework
             }
             public void free()
             {
-                instant.serverConnectionManager.DisconnectPlayer(networkPlayer.id, NetworkConnectionError.NetworkShutdown);
+                instant.serverGameManager.PlayerDisconnected(networkPlayer);
             }
             public void spawn(FactionCountry factionCountry, PlayerClass playerClass)
             {

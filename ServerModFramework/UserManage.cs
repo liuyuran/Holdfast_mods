@@ -58,7 +58,7 @@ namespace ServerModFramework
         {
             static void Postfix(RoundPlayerInformation roundPlayerInformation)
             {
-                if(netIdToSteamId.ContainsKey(roundPlayerInformation.NetworkPlayer.id))
+                if(!netIdToSteamId.ContainsKey(roundPlayerInformation.NetworkPlayer.id))
                     netIdToSteamId.Add(roundPlayerInformation.NetworkPlayer.id, roundPlayerInformation.SteamID);
                 if (playerJoinDelegate != null) playerJoinDelegate(roundPlayerInformation.SteamID);
             }
@@ -87,7 +87,7 @@ namespace ServerModFramework
             }
         }
 
-        [HarmonyPatch(typeof(ServerPlayerDamageManager), "CreatePlayerHealthChangePacket")]
+        /*[HarmonyPatch(typeof(ServerPlayerDamageManager), "CreatePlayerHealthChangePacket")]
         private static class UserManage_CreatePlayerHealthChangePacket_Patch
         {
             static void Postfix(int playerID, float newHealth)
@@ -95,7 +95,7 @@ namespace ServerModFramework
                 if(newHealth <= 0 && !carbonList.Contains(playerID) && netIdToSteamId.ContainsKey(playerID))
                     playerDeadDelegate(netIdToSteamId[playerID]);
             }
-        }
+        }*/
 
         [HarmonyPatch(typeof(PlayerBase), "ExecutePlayerAction")]
         private static class UserManage_ApplyPlayerActions_Patch
