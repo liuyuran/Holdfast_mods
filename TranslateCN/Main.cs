@@ -42,19 +42,27 @@ namespace TranslateCN
 
         static void OnGUI(UnityModManager.ModEntry modEntry)
         {
-            if (GUILayout.Button("导出所有文本"))
+            try
             {
-                exportLangugeFile();
-            }
+                if (GUILayout.Button("导出所有文本"))
+                {
+                    exportLangugeFile();
+                }
 
-            if (GUILayout.Button("重载翻译文本"))
-            {
-                loadLanguageFile();
-            }
+                if (GUILayout.Button("重载翻译文本"))
+                {
+                    loadLanguageFile();
+                }
 
-            if (GUILayout.Button("云端更新翻译"))
+                if (GUILayout.Button("云端更新翻译"))
+                {
+                    updateLanguageFile();
+                }
+            } catch (Exception e)
             {
-                updateLanguageFile();
+                logger.Log(e.Message);
+                logger.Log(e.StackTrace);
+                throw e;
             }
         }
 
@@ -68,21 +76,29 @@ namespace TranslateCN
             List<string> categories = LocalizationManager.GetCategories();
             string obj = "{";
             translateBox.Clear();
-            ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(CheckValidationResult);
-            string url = "https://weblate.chaotic-quantum.site/api/translations/holdfast/plugin/zh_Hans/units/";
-            WebRequest w1 = WebRequest.Create(url);
-            w1.Headers.Add("Authorization", "Token 2wkfYAiXTL36SLELtYJdVWRnhsL8cKlwab0i92dA");
-            WebResponse w2 = w1.GetResponse();
-            Stream s1 = w2.GetResponseStream();
-            StreamReader sr = new StreamReader(s1);
-            string s2 = sr.ReadToEnd();
-            JToken o = JToken.Parse(s2);
-            JArray result = (JArray)o["results"];
-            foreach (JToken key in result)
+            bool needContinue = true;
+            int index = 1;
+            while (needContinue)
             {
-                if (translateBox.ContainsKey(key["context"])) continue;
-                translateBox.Add(key["context"].ToString().Substring(1), key["target"]);
-                obj += string.Format("\"{0}\":\"{1}\",", key["context"].ToString().Substring(1), key["target"]);
+                ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(CheckValidationResult);
+                string url = "https://weblate.chaotic-quantum.site/api/translations/holdfast/plugin/zh_Hans/units/?page=" + index.ToString();
+                logger.Log(url);
+                WebRequest w1 = WebRequest.Create(url);
+                w1.Headers.Add("Authorization", "Token 2wkfYAiXTL36SLELtYJdVWRnhsL8cKlwab0i92dA");
+                WebResponse w2 = w1.GetResponse();
+                Stream s1 = w2.GetResponseStream();
+                StreamReader sr = new StreamReader(s1);
+                string s2 = sr.ReadToEnd();
+                JToken o = JToken.Parse(s2);
+                JArray result = (JArray)o["results"];
+                foreach (JToken key in result)
+                {
+                    if (translateBox.ContainsKey(key["context"])) continue;
+                    translateBox.Add(key["context"].ToString().Substring(1), key["target"]);
+                    obj += string.Format("\"{0}\":\"{1}\",", key["context"].ToString().Substring(1), key["target"]);
+                }
+                if (o["next"].ToString().Trim().Length == 0) needContinue = false;
+                else index++;
             }
             obj = obj.Substring(0, obj.Length - 1);
             obj += "}";
