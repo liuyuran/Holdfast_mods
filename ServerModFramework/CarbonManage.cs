@@ -111,22 +111,17 @@ namespace ServerModFramework
                 axis.x = look.x;
                 axis.y = look.z;
                 ownerPacketToServer.Instance = new byte?(spawnInstance);
+                ownerPacketToServer.OwnerPosition = new Vector3?(player.PlayerTransform.position);
                 ownerPacketToServer.OwnerInputAxis = new Vector2?(axis);
                 ownerPacketToServer.OwnerRotationY = new float?(look.y);
                 ownerPacketToServer.Swimming = player.PlayerBase.State.Has(20);
-                if (playerAction != PlayerActions.None)
-                {
-                    EnumCollection<PlayerActions> enumCollection = ComponentReferenceManager.genericObjectPools.playerActionsEnumCollection.Obtain();
-                    enumCollection.Add((int)playerAction);
-                    if (playerAction == PlayerActions.FireFirearm)
-                    {
-                        double networkTime = uLinkNetworkConnectionsCollection.networkTime;
-                        ownerPacketToServer.PacketTimestamp = new double?(networkTime);
-                        ownerPacketToServer.CameraForward = new Vector3?(player.PlayerTransform.forward);
-                        ownerPacketToServer.CameraPosition = new Vector3?(player.PlayerTransform.position);
-                    }
-                    ownerPacketToServer.ActionCollection = enumCollection;
-                }
+                double networkTime = uLinkNetworkConnectionsCollection.networkTime;
+                ownerPacketToServer.PacketTimestamp = new double?(networkTime);
+                EnumCollection<PlayerActions> enumCollection = ComponentReferenceManager.genericObjectPools.playerActionsEnumCollection.Obtain();
+                enumCollection.Add((int)playerAction);
+                ownerPacketToServer.CameraForward = new Vector3?(player.PlayerTransform.forward);
+                ownerPacketToServer.CameraPosition = new Vector3(0.3f, 1.5f, -1.0f);
+                ownerPacketToServer.ActionCollection = enumCollection;
                 player.uLinkStrictPlatformerCreator.HandleOwnerPacketToServer(ownerPacketToServer);
                 if (meleeStrike != MeleeStrikeType.None)
                 {
@@ -137,7 +132,6 @@ namespace ServerModFramework
                     playerMeleeStrikePacket.MeleeStrikeType = meleeStrike;
                     instant.meleeStrikeManager.MeleeAttackStrike(playerMeleeStrikePacket);
                 }
-                // logger.Log(networkPlayer.id + " : " + ownerPacketToServer.ToString());
             }
         }
 

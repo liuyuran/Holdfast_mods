@@ -22,6 +22,7 @@ namespace ServerModFramework
         {
             static void Postfix(RequestStartOfficerOrderPacket currentRequestPacket)
             {
+                if (officerOrderDelegate == null) return;
                 officerOrderDelegate(true, currentRequestPacket);
             }
         }
@@ -31,6 +32,7 @@ namespace ServerModFramework
         {
             static void Postfix(ActiveOfficerOrderInfo orderToRemove)
             {
+                if (officerOrderDelegate == null) return;
                 RequestStartOfficerOrderPacket packet = new RequestStartOfficerOrderPacket();
                 packet.officerNetworkPlayer = orderToRemove.officerPlayer.NetworkPlayer;
                 packet.officerOrderType = orderToRemove.officerOrderType;

@@ -1,6 +1,7 @@
 ﻿using Harmony12;
 using HoldfastGame;
 using ServerModFramework;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using uLink;
@@ -36,7 +37,6 @@ namespace PubLineBot
             Framework.playerSpawnDelegate += Framework_playerSpawnDelegate;
             Framework.playerDeadDelegate += Framework_playerDeadDelegate;
             Framework.playerLeaveDelegate += Framework_playerDeadDelegate;
-            Framework.playerActionUpdateDelegate += Framework_playerActionUpdateDelegate;
             Framework.officerOrderDelegate += Framework_officerOrderDelegate;
             Framework.roundEndDelegate += Framework_roundEndDelegate;
             logger.Log("线列机器人加载完成");
@@ -45,6 +45,7 @@ namespace PubLineBot
 
         private static void Framework_officerOrderDelegate(bool isStart, RequestStartOfficerOrderPacket currentRequestPacket)
         {
+            if (!isStart) return;
             int officerId = currentRequestPacket.officerNetworkPlayer.id;
             logger.Log(currentRequestPacket.officerOrderType.ToString());
             playerToBot[officerId].ForEach((int id) => {
@@ -82,13 +83,6 @@ namespace PubLineBot
                     instant.serverRoundPlayerManager.ResolveServerRoundPlayer(pair.Key);
                 wayPoint.Remove(serverRoundPlayer.NetworkPlayerID);
             });
-        }
-
-        private static void Framework_playerActionUpdateDelegate(ulong steamId, PlayerActions action)
-        {
-            // TODO 切换行进模式
-            ServerRoundPlayer serverRoundPlayer = instant.serverRoundPlayerManager.ResolveServerRoundPlayer(Framework.getPlayerId(steamId));
-            logger.Log(serverRoundPlayer.ServerPlayerBase.name + action.ToString() + serverRoundPlayer.PlayerBase.transform.forward.ToString());
         }
 
         [HarmonyPatch(typeof(ServerCarbonPlayersManager), "FixedUpdate")]
