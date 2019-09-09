@@ -123,6 +123,15 @@ namespace ServerModFramework
                 ownerPacketToServer.CameraPosition = new Vector3(0.3f, 1.5f, -1.0f);
                 ownerPacketToServer.ActionCollection = enumCollection;
                 player.uLinkStrictPlatformerCreator.HandleOwnerPacketToServer(ownerPacketToServer);
+                if (playerAction == PlayerActions.FireFirearm)
+                {
+                    ServerPacketToProxy proxy = new ServerPacketToProxy();
+                    proxy.PlayerID = (ushort) networkPlayer.id;
+                    proxy.Timestamp = networkTime;
+                    proxy.ActionCollection = enumCollection;
+                    proxy.State = player.ServerPlayerBase.State;
+                    CharacterServerNetworkUpdateableObjectRPCHandler.Instance.RegisterPacket(networkPlayer, proxy, true);
+                }
                 if (meleeStrike != MeleeStrikeType.None)
                 {
                     PlayerMeleeStrikePacket playerMeleeStrikePacket = ComponentReferenceManager.genericObjectPools.playerMeleeStrikePacket.Obtain();
